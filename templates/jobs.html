@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}الوظائف - PressJobs{% endblock %}
+{% block extra_css %}
+<style>
+.page-header { background: var(--dark2); border-bottom: 1px solid var(--border); padding: 3rem 2rem 2rem; }
+.page-header h1 { font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem; }
+.page-header p { color: var(--text-muted); }
+.filter-bar { background: var(--dark3); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; gap: 0.7rem; flex-wrap: wrap; align-items: center; }
+.filter-bar a { padding: 0.5rem 1rem; border-radius: 20px; border: 1.5px solid var(--border); color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.3s; }
+.filter-bar a:hover, .filter-bar a.active { border-color: var(--orange); color: var(--orange); background: rgba(244,117,32,0.1); }
+.jobs-layout { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
+.job-list-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.5rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: 1.5rem;
+    transition: all 0.3s; text-decoration: none; color: inherit;
+}
+.job-list-card:hover { border-color: rgba(244,117,32,0.3); transform: translateX(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
+.jlc-icon { width: 56px; height: 56px; border-radius: 14px; background: var(--gradient-blue); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
+.jlc-body { flex: 1; }
+.jlc-body h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; }
+.jlc-meta { display: flex; align-items: center; gap: 1rem; color: var(--text-muted); font-size: 0.83rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+.jlc-excerpt { color: var(--text-muted); font-size: 0.87rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.jlc-footer { display: flex; align-items: center; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
+.search-form { display: flex; gap: 0.7rem; margin-bottom: 2rem; flex-wrap: wrap; }
+.search-form input, .search-form select { flex: 1; min-width: 180px; }
+.empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
+.empty-state i { font-size: 4rem; margin-bottom: 1rem; opacity: 0.2; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div style="max-width:1200px;margin:0 auto">
+        <h1><i class="fas fa-briefcase" style="color:var(--orange)"></i> فرص العمل الإعلامية</h1>
+        <p>اكتشف أحدث الوظائف من القنوات والمواقع الإعلامية</p>
+    </div>
+</div>
+<div class="filter-bar">
+    <a href="/jobs" {% if not category %}class="active"{% endif %}>الكل</a>
+    <a href="/jobs?category=journalist" {% if category=='journalist' %}class="active"{% endif %}><i class="fas fa-newspaper"></i> صحفيون</a>
+    <a href="/jobs?category=photographer" {% if category=='photographer' %}class="active"{% endif %}><i class="fas fa-camera"></i> مصورون</a>
+    <a href="/jobs?category=content" {% if category=='content' %}class="active"{% endif %}><i class="fas fa-play-circle"></i> صناع المحتوى</a>
+    <a href="/jobs?category=editor" {% if category=='editor' %}class="active"{% endif %}><i class="fas fa-film"></i> مونتاج</a>
+    <a href="/jobs?category=presenter" {% if category=='presenter' %}class="active"{% endif %}><i class="fas fa-microphone"></i> مذيعون</a>
+    <a href="/jobs?category=reporter" {% if category=='reporter' %}class="active"{% endif %}><i class="fas fa-broadcast-tower"></i> مراسلون</a>
+</div>
+<div class="jobs-layout">
+    <form class="search-form" method="get">
+        <input class="form-group input" type="text" name="search" value="{{ search }}" placeholder="ابحث في الوظائف..." style="padding:0.8rem 1rem;background:rgba(255,255,255,0.05);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;outline:none">
+        <input type="hidden" name="category" value="{{ category }}">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> بحث</button>
+    </form>
+    {% if jobs %}
+    <p style="color:var(--text-muted);margin-bottom:1.5rem">{{ jobs|length }} وظيفة متاحة</p>
+    {% for job in jobs %}
+    <a href="/job/{{ job.id }}" class="job-list-card">
+        <div class="jlc-icon"><i class="fas fa-{{ {'journalist':'newspaper','photographer':'camera','content':'play-circle','editor':'film','presenter':'microphone','reporter':'broadcast-tower'}.get(job.category, 'briefcase') }}"></i></div>
+        <div class="jlc-body">
+            <h3>{{ job.title }}</h3>
+            <div class="jlc-meta">
+                <span><i class="fas fa-tv"></i> {{ job.channel_name }}</span>
+                {% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}
+                {% if job.salary %}<span><i class="fas fa-dollar-sign"></i> {{ job.salary }}</span>{% endif %}
+                <span><i class="fas fa-clock"></i> {{ job.created_at[:10] }}</span>
+            </div>
+            <p class="jlc-excerpt">{{ job.description }}</p>
+            <div class="jlc-footer">
+                <span class="badge badge-blue">{{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}</span>
+                {% if job.job_type %}<span class="badge badge-orange">{{ job.job_type }}</span>{% endif %}
+            </div>
+        </div>
+        <span class="btn btn-primary btn-sm">تقدّم الآن</span>
+    </a>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-briefcase"></i>
+        <h3 style="margin-bottom:0.5rem">لا توجد وظائف</h3>
+        <p>لم يتم العثور على وظائف مطابقة لبحثك</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

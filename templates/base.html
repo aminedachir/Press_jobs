@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PressJobs - فرص عمل إعلامية{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --blue: #1a3a8f;
+            --blue-mid: #2255cc;
+            --orange: #f47520;
+            --orange-dark: #d4600e;
+            --dark: #0d1117;
+            --dark2: #161b22;
+            --dark3: #1c2333;
+            --border: rgba(255,255,255,0.08);
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --card-bg: rgba(22, 27, 34, 0.9);
+            --gradient-blue: linear-gradient(135deg, #1a3a8f, #2255cc);
+            --gradient-orange: linear-gradient(135deg, #f47520, #d4600e);
+            --gradient-hero: linear-gradient(135deg, #0d1117 0%, #1a2240 50%, #0d1117 100%);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            direction: rtl;
+            overflow-x: hidden;
+        }
+        /* NAVBAR */
+        nav {
+            position: fixed; top: 0; width: 100%; z-index: 1000;
+            background: rgba(13,17,23,0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            height: 70px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .nav-brand { display: flex; align-items: center; gap: 0.7rem; text-decoration: none; }
+        .nav-brand img { height: 48px; width: auto; }
+        .nav-brand span { font-size: 1.4rem; font-weight: 900; background: var(--gradient-blue); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-links { display: flex; align-items: center; gap: 0.3rem; }
+        .nav-links a {
+            color: var(--text-muted); text-decoration: none; padding: 0.5rem 1rem;
+            border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+            transition: all 0.3s; white-space: nowrap;
+        }
+        .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.07); }
+        .nav-links a.active { color: var(--orange); }
+        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border-radius: 10px; font-family: inherit; font-weight: 700; cursor: pointer; transition: all 0.3s; text-decoration: none; border: none; font-size: 0.9rem; }
+        .btn-primary { background: var(--gradient-orange); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(244,117,32,0.4); }
+        .btn-secondary { background: var(--gradient-blue); color: white; }
+        .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(34,85,204,0.4); }
+        .btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+        .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+        .btn-sm { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
+        .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 5px; }
+        .hamburger span { width: 25px; height: 2px; background: var(--text); transition: 0.3s; border-radius: 2px; }
+        /* MAIN CONTENT */
+        main { padding-top: 70px; min-height: calc(100vh - 70px); }
+        /* FLASH MESSAGES */
+        .flash-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 500px; }
+        .flash { padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 0.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.7rem; animation: slideDown 0.3s ease; }
+        .flash.success { background: rgba(56,161,105,0.15); border: 1px solid rgba(56,161,105,0.4); color: #68d391; }
+        .flash.error { background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.4); color: #fc8181; }
+        .flash.warning { background: rgba(237,137,54,0.15); border: 1px solid rgba(237,137,54,0.4); color: #f6ad55; }
+        @keyframes slideDown { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: translateY(0); } }
+        /* CARDS */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .card:hover { transform: translateY(-4px); border-color: rgba(244,117,32,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        /* SECTION */
+        .section { padding: 5rem 2rem; }
+        .section-title { font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem; }
+        .section-sub { color: var(--text-muted); margin-bottom: 3rem; font-size: 1.05rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem; }
+        /* BADGE */
+        .badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-blue { background: rgba(34,85,204,0.2); color: #6fa0ff; border: 1px solid rgba(34,85,204,0.3); }
+        .badge-orange { background: rgba(244,117,32,0.2); color: #ffaa5c; border: 1px solid rgba(244,117,32,0.3); }
+        .badge-green { background: rgba(56,161,105,0.2); color: #68d391; border: 1px solid rgba(56,161,105,0.3); }
+        .badge-red { background: rgba(229,62,62,0.2); color: #fc8181; border: 1px solid rgba(229,62,62,0.3); }
+        /* FOOTER */
+        footer {
+            background: var(--dark2);
+            border-top: 1px solid var(--border);
+            padding: 3rem 2rem 1.5rem;
+            text-align: center;
+        }
+        footer .footer-brand { font-size: 1.5rem; font-weight: 900; background: var(--gradient-orange); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+        footer p { color: var(--text-muted); font-size: 0.9rem; }
+        /* FORM STYLES */
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.85rem 1rem; background: rgba(255,255,255,0.05);
+            border: 1.5px solid var(--border); border-radius: 10px; color: var(--text);
+            font-family: inherit; font-size: 0.95rem; transition: all 0.3s; outline: none;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--orange); background: rgba(244,117,32,0.05); box-shadow: 0 0 0 4px rgba(244,117,32,0.1);
+        }
+        .form-group select option { background: var(--dark2); }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        /* RESPONSIVE */
+        @media(max-width:900px) {
+            .grid-3, .grid-4 { grid-template-columns: repeat(2,1fr); }
+        }
+        @media(max-width:640px) {
+            .nav-links { display: none; flex-direction: column; position: absolute; top: 70px; right: 0; left: 0; background: rgba(13,17,23,0.98); padding: 1rem; border-bottom: 1px solid var(--border); gap: 0.3rem; }
+            .nav-links.open { display: flex; }
+            .hamburger { display: flex; }
+            .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr; }
+            .section { padding: 3rem 1rem; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<nav>
+    <a href="/" class="nav-brand">
+        <img src="/static/images/logo.png" alt="PressJobs">
+    </a>
+    <div class="nav-links" id="navLinks">
+        <a href="/" {% if request.endpoint=='index' %}class="active"{% endif %}><i class="fas fa-home"></i> الرئيسية</a>
+        <a href="/jobs" {% if request.endpoint=='jobs' %}class="active"{% endif %}><i class="fas fa-briefcase"></i> الوظائف</a>
+        <a href="/journalists" {% if request.endpoint=='journalists' %}class="active"{% endif %}><i class="fas fa-users"></i> الكوادر الإعلامية</a>
+        {% if session.user_id %}
+        <a href="/dashboard" {% if request.endpoint=='dashboard' %}class="active"{% endif %}><i class="fas fa-tachometer-alt"></i> لوحة التحكم</a>
+        <a href="/profile/{{ session.user_id }}"><i class="fas fa-user"></i> {{ session.user_name }}</a>
+        <a href="/logout" class="btn btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> خروج</a>
+        {% else %}
+        <a href="/login" class="btn btn-outline btn-sm"><i class="fas fa-sign-in-alt"></i> دخول</a>
+        <a href="/register" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i> تسجيل</a>
+        {% endif %}
+    </div>
+    <div class="hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+        <span></span><span></span><span></span>
+    </div>
+</nav>
+
+{% if get_flashed_messages() %}
+<div class="flash-container">
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for category, message in messages %}
+<div class="flash {{ category }}">
+    <i class="fas fa-{% if category=='success' %}check-circle{% elif category=='error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+    {{ message }}
+</div>
+{% endfor %}
+{% endwith %}
+</div>
+{% endif %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer>
+    <div class="footer-brand">PressJobs</div>
+    <p>منصة ربط الكوادر الإعلامية بالقنوات والمواقع الإخبارية</p>
+    <p style="margin-top:0.5rem">© 2024 PressJobs. جميع الحقوق محفوظة.</p>
+</footer>
+
+<script>
+setTimeout(() => {
+    document.querySelectorAll('.flash').forEach(el => el.style.display = 'none');
+}, 4000);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

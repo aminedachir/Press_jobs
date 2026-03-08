@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}{{ job.title }} - PressJobs{% endblock %}
+{% block extra_css %}
+<style>
+.job-detail-layout { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem; display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+.job-main { }
+.job-sidebar { }
+.detail-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; }
+.job-title-section { display: flex; align-items: flex-start; gap: 1.5rem; margin-bottom: 2rem; }
+.job-big-icon { width: 72px; height: 72px; border-radius: 18px; background: var(--gradient-blue); display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+.job-title-text h1 { font-size: 1.5rem; font-weight: 900; margin-bottom: 0.5rem; }
+.job-title-meta { display: flex; flex-wrap: wrap; gap: 0.8rem; color: var(--text-muted); font-size: 0.85rem; }
+.info-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 0; border-bottom: 1px solid var(--border); }
+.info-row:last-child { border-bottom: none; }
+.info-row i { color: var(--orange); width: 20px; text-align: center; }
+.info-label { color: var(--text-muted); font-size: 0.85rem; flex: 1; }
+.info-value { font-weight: 600; font-size: 0.9rem; }
+.apply-form textarea { margin-bottom: 1rem; }
+h3.section-h { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--border); color: var(--orange); }
+.job-body p, .job-body li { color: var(--text-muted); line-height: 1.8; margin-bottom: 0.5rem; }
+@media(max-width:768px) { .job-detail-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="job-detail-layout">
+    <div class="job-main">
+        <div class="detail-card">
+            <div class="job-title-section">
+                <div class="job-big-icon">
+                    <i class="fas fa-{{ {'journalist':'newspaper','photographer':'camera','content':'play-circle','editor':'film','presenter':'microphone','reporter':'broadcast-tower'}.get(job.category, 'briefcase') }}"></i>
+                </div>
+                <div class="job-title-text">
+                    <h1>{{ job.title }}</h1>
+                    <div class="job-title-meta">
+                        <span><i class="fas fa-tv"></i> {{ job.channel_name }}</span>
+                        {% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}
+                        <span><i class="fas fa-calendar"></i> {{ job.created_at[:10] }}</span>
+                    </div>
+                    <div style="margin-top:0.7rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+                        <span class="badge badge-blue">{{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}</span>
+                        {% if job.job_type %}<span class="badge badge-orange">{{ job.job_type }}</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="job-body">
+                <h3 class="section-h"><i class="fas fa-align-right"></i> وصف الوظيفة</h3>
+                <p>{{ job.description }}</p>
+                {% if job.requirements %}
+                <h3 class="section-h" style="margin-top:1.5rem"><i class="fas fa-list-check"></i> المتطلبات</h3>
+                <p>{{ job.requirements }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="job-sidebar">
+        <!-- JOB INFO -->
+        <div class="detail-card">
+            <h3 class="section-h"><i class="fas fa-info-circle"></i> تفاصيل الوظيفة</h3>
+            {% if job.salary %}
+            <div class="info-row">
+                <i class="fas fa-dollar-sign"></i>
+                <span class="info-label">الراتب</span>
+                <span class="info-value">{{ job.salary }}</span>
+            </div>
+            {% endif %}
+            {% if job.job_type %}
+            <div class="info-row">
+                <i class="fas fa-clock"></i>
+                <span class="info-label">نوع العمل</span>
+                <span class="info-value">{{ job.job_type }}</span>
+            </div>
+            {% endif %}
+            {% if job.location %}
+            <div class="info-row">
+                <i class="fas fa-map-marker-alt"></i>
+                <span class="info-label">الموقع</span>
+                <span class="info-value">{{ job.location }}</span>
+            </div>
+            {% endif %}
+            <div class="info-row">
+                <i class="fas fa-tag"></i>
+                <span class="info-label">التخصص</span>
+                <span class="info-value">{{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}</span>
+            </div>
+        </div>
+
+        <!-- CHANNEL INFO -->
+        <div class="detail-card">
+            <h3 class="section-h"><i class="fas fa-tv"></i> عن القناة</h3>
+            <div style="text-align:center;margin-bottom:1rem">
+                <div style="width:60px;height:60px;border-radius:50%;background:var(--gradient-blue);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 0.7rem">
+                    <i class="fas fa-tv"></i>
+                </div>
+                <h4>{{ job.channel_name }}</h4>
+                {% if job.channel_location %}<p style="color:var(--text-muted);font-size:0.85rem"><i class="fas fa-map-marker-alt"></i> {{ job.channel_location }}</p>{% endif %}
+            </div>
+            {% if job.channel_bio %}<p style="color:var(--text-muted);font-size:0.85rem;line-height:1.6">{{ job.channel_bio[:150] }}</p>{% endif %}
+        </div>
+
+        <!-- APPLY FORM -->
+        {% if session.user_id and session.account_type == 'journalist' %}
+        <div class="detail-card">
+            <h3 class="section-h"><i class="fas fa-paper-plane"></i> تقدّم لهذه الوظيفة</h3>
+            <form method="POST" action="/apply/{{ job.id }}" class="apply-form">
+                <div class="form-group">
+                    <label>رسالة التقديم (اختياري)</label>
+                    <textarea name="message" placeholder="اكتب رسالة مختصرة للقناة..." rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+                    <i class="fas fa-paper-plane"></i> إرسال الطلب
+                </button>
+            </form>
+        </div>
+        {% elif not session.user_id %}
+        <div class="detail-card" style="text-align:center">
+            <i class="fas fa-lock" style="font-size:2rem;color:var(--orange);margin-bottom:1rem"></i>
+            <p style="color:var(--text-muted);margin-bottom:1rem">سجّل الدخول للتقدم لهذه الوظيفة</p>
+            <a href="/login" class="btn btn-primary" style="width:100%;justify-content:center">تسجيل الدخول</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

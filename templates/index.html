@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% block title %}PressJobs - وصل موهبتك بفرصتك{% endblock %}
+{% block extra_css %}
+<style>
+/* HERO */
+.hero {
+    min-height: 92vh;
+    display: flex; align-items: center;
+    background: var(--gradient-hero);
+    position: relative; overflow: hidden;
+    padding: 4rem 2rem;
+}
+.hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: 
+        radial-gradient(ellipse 80% 60% at 20% 50%, rgba(34,85,204,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 50%, rgba(244,117,32,0.1) 0%, transparent 60%);
+}
+.hero-grid {
+    max-width: 1200px; margin: 0 auto; width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+    position: relative; z-index: 1;
+}
+.hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(244,117,32,0.1); border: 1px solid rgba(244,117,32,0.3);
+    color: var(--orange); padding: 0.4rem 1rem; border-radius: 20px;
+    font-size: 0.85rem; font-weight: 700; margin-bottom: 1.5rem;
+}
+.hero h1 { font-size: clamp(2rem,4vw,3.2rem); font-weight: 900; line-height: 1.2; margin-bottom: 1.2rem; }
+.hero h1 span { background: var(--gradient-orange); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { color: var(--text-muted); font-size: 1.1rem; line-height: 1.8; margin-bottom: 2rem; }
+.hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+.hero-stats { display: flex; gap: 2rem; margin-top: 2.5rem; flex-wrap: wrap; }
+.stat { text-align: center; }
+.stat-num { font-size: 2rem; font-weight: 900; background: var(--gradient-orange); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.stat-label { font-size: 0.8rem; color: var(--text-muted); }
+.hero-visual {
+    display: flex; flex-direction: column; gap: 1rem;
+}
+.job-card-mini {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.2rem 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+    animation: floatCard 3s ease-in-out infinite;
+}
+.job-card-mini:nth-child(2) { animation-delay: 0.5s; margin-right: 2rem; }
+.job-card-mini:nth-child(3) { animation-delay: 1s; }
+@keyframes floatCard { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.job-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+.job-icon.blue { background: rgba(34,85,204,0.2); }
+.job-icon.orange { background: rgba(244,117,32,0.2); }
+.job-icon.green { background: rgba(56,161,105,0.2); }
+.job-info h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
+.job-info span { font-size: 0.8rem; color: var(--text-muted); }
+/* SEARCH BAR */
+.search-bar-section {
+    background: var(--dark2); padding: 2rem;
+    border-bottom: 1px solid var(--border);
+}
+.search-bar { max-width: 800px; margin: 0 auto; display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.search-bar input, .search-bar select {
+    flex: 1; min-width: 200px; padding: 0.9rem 1.2rem;
+    background: rgba(255,255,255,0.05); border: 1.5px solid var(--border);
+    border-radius: 12px; color: var(--text); font-family: inherit; font-size: 0.95rem; outline: none;
+    transition: all 0.3s;
+}
+.search-bar input:focus, .search-bar select:focus { border-color: var(--orange); }
+.search-bar select option { background: var(--dark2); }
+/* CATEGORIES */
+.categories { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.cat-btn {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 1.2rem; border-radius: 30px;
+    background: rgba(255,255,255,0.05); border: 1.5px solid var(--border);
+    color: var(--text-muted); cursor: pointer; transition: all 0.3s;
+    text-decoration: none; font-size: 0.9rem; font-weight: 600; font-family: inherit;
+}
+.cat-btn:hover, .cat-btn.active {
+    background: rgba(244,117,32,0.15); border-color: var(--orange);
+    color: var(--orange); transform: translateY(-2px);
+}
+/* JOB CARD */
+.job-card { padding: 1.5rem; cursor: pointer; text-decoration: none; color: inherit; display: block; }
+.job-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.channel-icon { width: 52px; height: 52px; border-radius: 12px; background: var(--gradient-blue); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
+.job-meta { font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; margin-top: 0.3rem; flex-wrap: wrap; }
+.job-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem; }
+.job-excerpt { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.job-footer { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+/* PROFILE CARD */
+.profile-card { padding: 1.5rem; text-align: center; }
+.profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--gradient-blue); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1rem; border: 3px solid rgba(244,117,32,0.3); }
+.profile-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.profile-card p { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.8rem; line-height: 1.5; }
+.skill-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; }
+.skill-tag { background: rgba(255,255,255,0.07); border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; color: var(--text-muted); }
+/* HOW IT WORKS */
+.step { text-align: center; padding: 2rem; }
+.step-num { width: 64px; height: 64px; border-radius: 50%; background: var(--gradient-orange); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; margin: 0 auto 1.2rem; box-shadow: 0 8px 30px rgba(244,117,32,0.3); }
+.step h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.step p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.7; }
+/* CTA */
+.cta-section {
+    margin: 4rem 2rem;
+    background: linear-gradient(135deg, rgba(26,58,143,0.4), rgba(244,117,32,0.2));
+    border: 1px solid rgba(244,117,32,0.2);
+    border-radius: 24px; padding: 4rem 2rem; text-align: center;
+    position: relative; overflow: hidden;
+}
+.cta-section::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(244,117,32,0.1) 0%, transparent 70%);
+}
+.cta-section h2 { font-size: 2rem; font-weight: 900; margin-bottom: 1rem; position: relative; }
+.cta-section p { color: var(--text-muted); margin-bottom: 2rem; font-size: 1.05rem; position: relative; }
+.cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; }
+@media(max-width:768px) {
+    .hero-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .hero-visual { display: none; }
+    .hero { padding: 3rem 1rem; min-height: auto; }
+}
+</style>
+{% endblock %}
+{% block content %}
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-grid">
+        <div class="hero-content">
+            <div class="hero-eyebrow"><i class="fas fa-broadcast-tower"></i> المنصة الإعلامية الأولى</div>
+            <h1>وصّل <span>موهبتك</span><br>بفرصتك الإعلامية</h1>
+            <p>منصة تربط الصحفيين والمصورين وصناع المحتوى وأصحاب المونتاج مع القنوات الإعلامية والمواقع الإخبارية</p>
+            <div class="hero-btns">
+                <a href="/register" class="btn btn-primary"><i class="fas fa-rocket"></i> ابدأ الآن مجاناً</a>
+                <a href="/jobs" class="btn btn-outline"><i class="fas fa-search"></i> استعرض الوظائف</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat"><div class="stat-num">500+</div><div class="stat-label">كادر إعلامي</div></div>
+                <div class="stat"><div class="stat-num">120+</div><div class="stat-label">قناة وموقع</div></div>
+                <div class="stat"><div class="stat-num">300+</div><div class="stat-label">وظيفة منشورة</div></div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="job-card-mini">
+                <div class="job-icon blue"><i class="fas fa-video"></i></div>
+                <div class="job-info"><h4>مصور صحفي ميداني</h4><span>قناة الأخبار الوطنية • القاهرة</span></div>
+            </div>
+            <div class="job-card-mini">
+                <div class="job-icon orange"><i class="fas fa-pen-nib"></i></div>
+                <div class="job-info"><h4>محرر أخبار سياسية</h4><span>موقع الخبر اليومي • بيروت</span></div>
+            </div>
+            <div class="job-card-mini">
+                <div class="job-icon green"><i class="fas fa-film"></i></div>
+                <div class="job-info"><h4>مونتير محترف</h4><span>استوديو المحتوى • دبي</span></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SEARCH -->
+<div class="search-bar-section">
+    <form class="search-bar" action="/jobs" method="get">
+        <input type="text" name="search" placeholder="ابحث عن وظيفة..." value="">
+        <select name="category">
+            <option value="">كل التخصصات</option>
+            <option value="journalist">صحفي</option>
+            <option value="photographer">مصور</option>
+            <option value="content">صانع محتوى</option>
+            <option value="editor">مونتير</option>
+        </select>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> بحث</button>
+    </form>
+</div>
+
+<!-- CATEGORIES -->
+<section class="section" style="padding-bottom:0">
+    <div style="max-width:1200px;margin:0 auto">
+        <h2 class="section-title">التخصصات الإعلامية</h2>
+        <p class="section-sub">اكتشف الفرص المناسبة لتخصصك</p>
+        <div class="categories">
+            <a href="/jobs?category=journalist" class="cat-btn"><i class="fas fa-newspaper"></i> صحفيون</a>
+            <a href="/jobs?category=photographer" class="cat-btn"><i class="fas fa-camera"></i> مصورون</a>
+            <a href="/jobs?category=content" class="cat-btn"><i class="fas fa-play-circle"></i> صناع المحتوى</a>
+            <a href="/jobs?category=editor" class="cat-btn"><i class="fas fa-film"></i> المونتاج</a>
+            <a href="/jobs?category=presenter" class="cat-btn"><i class="fas fa-microphone"></i> مذيعون</a>
+            <a href="/jobs?category=reporter" class="cat-btn"><i class="fas fa-broadcast-tower"></i> مراسلون</a>
+        </div>
+    </div>
+</section>
+
+<!-- LATEST JOBS -->
+<section class="section">
+    <div style="max-width:1200px;margin:0 auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+            <div>
+                <h2 class="section-title" style="margin-bottom:0.2rem">أحدث الوظائف</h2>
+                <p style="color:var(--text-muted)">فرص عمل جديدة من قنوات إعلامية موثوقة</p>
+            </div>
+            <a href="/jobs" class="btn btn-outline">عرض الكل <i class="fas fa-arrow-left"></i></a>
+        </div>
+        {% if jobs %}
+        <div class="grid-3">
+        {% for job in jobs %}
+        <a href="/job/{{ job.id }}" class="card job-card">
+            <div class="job-card-header">
+                <div>
+                    <h3>{{ job.title }}</h3>
+                    <div class="job-meta">
+                        <i class="fas fa-tv"></i> {{ job.channel_name }}
+                        {% if job.location %} · <i class="fas fa-map-marker-alt"></i> {{ job.location }}{% endif %}
+                    </div>
+                </div>
+                <div class="channel-icon"><i class="fas fa-tv"></i></div>
+            </div>
+            <p class="job-excerpt">{{ job.description }}</p>
+            <div class="job-footer">
+                <span class="badge badge-blue">{{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}</span>
+                {% if job.job_type %}<span class="badge badge-orange">{{ job.job_type }}</span>{% endif %}
+            </div>
+        </a>
+        {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:4rem;color:var(--text-muted)">
+            <i class="fas fa-briefcase" style="font-size:3rem;margin-bottom:1rem;opacity:0.3"></i>
+            <p>لا توجد وظائف منشورة بعد</p>
+            <a href="/register" class="btn btn-primary" style="margin-top:1rem">انضم الآن</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- JOURNALISTS -->
+{% if journalists %}
+<section class="section" style="background:var(--dark2);padding-top:4rem;padding-bottom:4rem">
+    <div style="max-width:1200px;margin:0 auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;flex-wrap:wrap;gap:1rem">
+            <div>
+                <h2 class="section-title" style="margin-bottom:0.2rem">الكوادر الإعلامية</h2>
+                <p style="color:var(--text-muted)">صحفيون ومصورون وصناع محتوى متميزون</p>
+            </div>
+            <a href="/journalists" class="btn btn-outline">عرض الكل <i class="fas fa-arrow-left"></i></a>
+        </div>
+        <div class="grid-3">
+        {% for j in journalists %}
+        <a href="/profile/{{ j.id }}" class="card" style="text-decoration:none;color:inherit">
+            <div class="profile-card">
+                <div class="profile-avatar"><i class="fas fa-user"></i></div>
+                <h3>{{ j.name }}</h3>
+                {% if j.location %}<p style="font-size:0.8rem;margin-bottom:0.5rem"><i class="fas fa-map-marker-alt"></i> {{ j.location }}</p>{% endif %}
+                {% if j.bio %}<p>{{ j.bio[:80] }}{% if j.bio|length > 80 %}...{% endif %}</p>{% endif %}
+                {% if j.skills %}
+                <div class="skill-tags">
+                    {% for skill in j.skills.split(',')[:3] %}
+                    <span class="skill-tag">{{ skill.strip() }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- HOW IT WORKS -->
+<section class="section">
+    <div style="max-width:1100px;margin:0 auto;text-align:center">
+        <h2 class="section-title">كيف يعمل PressJobs؟</h2>
+        <p class="section-sub">ثلاث خطوات بسيطة للوصول إلى فرصتك</p>
+        <div class="grid-3">
+            <div class="step">
+                <div class="step-num">١</div>
+                <h3>أنشئ ملفك الشخصي</h3>
+                <p>سجّل حسابك وأضف مهاراتك وخبراتك ودراساتك لعرضها أمام القنوات والمواقع</p>
+            </div>
+            <div class="step">
+                <div class="step-num">٢</div>
+                <h3>استعرض الوظائف</h3>
+                <p>ابحث عن الفرص المناسبة لتخصصك من بين مئات الوظائف المنشورة يومياً</p>
+            </div>
+            <div class="step">
+                <div class="step-num">٣</div>
+                <h3>تقدّم وانطلق</h3>
+                <p>أرسل طلبك بنقرة واحدة وانتظر رد القناة المعنية على طلبك</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<div style="max-width:1200px;margin:0 auto;padding:0 2rem 4rem">
+    <div class="cta-section">
+        <h2>هل أنت قناة إعلامية أو موقع إخباري؟</h2>
+        <p>انضم إلينا وانشر وظائفك الآن للوصول إلى أفضل الكوادر الإعلامية المتخصصة</p>
+        <div class="cta-btns">
+            <a href="/register" class="btn btn-primary"><i class="fas fa-tv"></i> سجّل كقناة</a>
+            <a href="/register" class="btn btn-secondary"><i class="fas fa-user-tie"></i> سجّل كصحفي</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

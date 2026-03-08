@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}إنشاء حساب - PressJobs{% endblock %}
+{% block extra_css %}
+<style>
+.auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; background: var(--gradient-hero); }
+.auth-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem; width: 100%; max-width: 520px; backdrop-filter: blur(20px); }
+.auth-logo { text-align: center; margin-bottom: 2rem; }
+.auth-logo img { height: 70px; }
+.auth-logo h2 { font-size: 1.5rem; font-weight: 900; margin-top: 0.7rem; }
+.auth-logo p { color: var(--text-muted); font-size: 0.9rem; }
+.type-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.5rem; }
+.type-option { position: relative; }
+.type-option input { position: absolute; opacity: 0; }
+.type-option label {
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    padding: 1.2rem; border: 1.5px solid var(--border); border-radius: 12px;
+    cursor: pointer; transition: all 0.3s; text-align: center;
+}
+.type-option label i { font-size: 2rem; }
+.type-option label span { font-weight: 700; font-size: 0.9rem; }
+.type-option label small { color: var(--text-muted); font-size: 0.78rem; }
+.type-option input:checked + label { border-color: var(--orange); background: rgba(244,117,32,0.1); color: var(--orange); }
+.type-option label:hover { border-color: rgba(244,117,32,0.4); }
+.divider { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin: 1.2rem 0; position: relative; }
+.divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border); }
+.divider span { background: var(--card-bg); padding: 0 1rem; position: relative; }
+.auth-footer { text-align: center; margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem; }
+.auth-footer a { color: var(--orange); text-decoration: none; font-weight: 600; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <img src="/static/images/logo.png" alt="PressJobs">
+            <h2>إنشاء حساب جديد</h2>
+            <p>انضم إلى مجتمع الإعلاميين والقنوات</p>
+        </div>
+        <form method="POST">
+            <div class="type-selector">
+                <div class="type-option">
+                    <input type="radio" name="account_type" value="journalist" id="t1" checked>
+                    <label for="t1">
+                        <i class="fas fa-user-tie"></i>
+                        <span>كادر إعلامي</span>
+                        <small>صحفي، مصور، مونتير...</small>
+                    </label>
+                </div>
+                <div class="type-option">
+                    <input type="radio" name="account_type" value="channel" id="t2">
+                    <label for="t2">
+                        <i class="fas fa-tv"></i>
+                        <span>قناة / موقع</span>
+                        <small>انشر وظائفك الآن</small>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-user"></i> الاسم الكامل / اسم القناة</label>
+                <input type="text" name="name" required placeholder="أدخل اسمك الكامل">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                <input type="email" name="email" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-lock"></i> كلمة المرور</label>
+                <input type="password" name="password" required placeholder="كلمة مرور قوية">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-map-marker-alt"></i> الموقع الجغرافي</label>
+                <input type="text" name="location" placeholder="مثال: القاهرة، بيروت، دبي...">
+            </div>
+            <div class="form-group journalist-field">
+                <label><i class="fas fa-tools"></i> مهاراتك (للكوادر الإعلامية)</label>
+                <input type="text" name="skills" placeholder="مثال: تصوير، مونتاج، تحقيقات صحفية...">
+            </div>
+            <div class="form-group journalist-field">
+                <label><i class="fas fa-graduation-cap"></i> المؤهل الدراسي</label>
+                <input type="text" name="education" placeholder="مثال: بكالوريوس إعلام - جامعة القاهرة">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-info-circle"></i> نبذة تعريفية</label>
+                <textarea name="bio" placeholder="اكتب نبذة مختصرة عنك أو عن قناتك..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:1rem;font-size:1rem">
+                <i class="fas fa-user-plus"></i> إنشاء الحساب
+            </button>
+        </form>
+        <div class="auth-footer">
+            لديك حساب بالفعل؟ <a href="/login">سجّل الدخول</a>
+        </div>
+    </div>
+</div>
+<script>
+document.querySelectorAll('input[name="account_type"]').forEach(r => {
+    r.addEventListener('change', function() {
+        const jFields = document.querySelectorAll('.journalist-field');
+        jFields.forEach(f => f.style.display = this.value === 'journalist' ? 'block' : 'none');
+    });
+});
+</script>
+{% endblock %}
