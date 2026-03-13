@@ -10,6 +10,46 @@
 .auth-logo p { color: var(--text-muted); font-size: 0.9rem; }
 .auth-footer { text-align: center; margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem; }
 .auth-footer a { color: var(--orange); text-decoration: none; font-weight: 600; }
+
+/* ── Incognito notice ── */
+.incognito-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: rgba(244,117,32,0.08);
+    border: 1px solid rgba(244,117,32,0.25);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    margin-bottom: 1.5rem;
+}
+.incognito-notice .notice-icon {
+    font-size: 1.1rem;
+    color: var(--orange);
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+.incognito-notice .notice-body { flex: 1; }
+.incognito-notice .notice-title {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--orange);
+    margin-bottom: 0.25rem;
+}
+.incognito-notice .notice-text {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+.incognito-notice .notice-text kbd {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 4px;
+    padding: 0.05rem 0.35rem;
+    font-size: 0.72rem;
+    font-family: monospace;
+    color: var(--text);
+}
 </style>
 {% endblock %}
 {% block content %}
@@ -20,6 +60,23 @@
             <h2>تسجيل الدخول</h2>
             <p>مرحباً بعودتك إلى PressJobs</p>
         </div>
+
+        <!-- Incognito notice -->
+        <div class="incognito-notice">
+            <span class="notice-icon"><i class="fas fa-user-secret"></i></span>
+            <div class="notice-body">
+                <div class="notice-title">تسجيل دخول بحسابين في نفس الوقت؟</div>
+                <p class="notice-text">
+                    المتصفح يسمح بحساب واحد فقط في نفس الوقت.
+                    لفتح حساب ثانٍ استخدم نافذة خاصة:
+                    <br>
+                    Chrome / Edge: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>
+                    &nbsp;·&nbsp;
+                    Firefox: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd>
+                </p>
+            </div>
+        </div>
+
         <form method="POST">
             <div class="form-group">
                 <label><i class="fas fa-envelope"></i> البريد الإلكتروني</label>

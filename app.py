@@ -1,13 +1,37 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 import sqlite3
 import os
+import subprocess
 from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'pressjobs_secret_2024'
 
 DB_PATH = 'pressjobs.db'
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def convert_to_mp4(src_path):
+    """Convert any video to H.264 MP4 for universal browser support.
+    Returns the new filename (without folder), or original name if conversion fails."""
+    base = os.path.splitext(src_path)[0]
+    out_path = base + '_c.mp4'
+    try:
+        result = subprocess.run([
+            'ffmpeg', '-y', '-i', src_path,
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+            '-c:a', 'aac', '-b:a', '128k',
+            '-movflags', '+faststart',
+            out_path
+        ], capture_output=True, timeout=300)
+        if result.returncode == 0 and os.path.exists(out_path):
+            os.remove(src_path)          # delete original
+            return out_path
+    except Exception:
+        pass
+    return src_path                      # fallback: keep original
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -54,10 +78,48 @@ def init_db():
         FOREIGN KEY(job_id) REFERENCES jobs(id),
         FOREIGN KEY(journalist_id) REFERENCES users(id)
     )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        title TEXT,
+        description TEXT,
+        media_filename TEXT,
+        media_type TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )''')
     conn.commit()
     conn.close()
 
 init_db()
+
+# ── Migrate: add new journalist profile columns if they don't exist ──
+def migrate_db():
+    conn = get_db()
+    c = conn.cursor()
+    existing = [row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()]
+    new_cols = [
+        ("last_name",          "TEXT"),
+        ("gender",             "TEXT"),
+        ("civil_status",       "TEXT"),
+        ("specialty",          "TEXT"),
+        ("years_experience",   "TEXT"),
+        ("preferred_channels", "TEXT"),
+        ("extra_skills",       "TEXT"),
+        ("cv_filename",        "TEXT"),
+        ("intro_video",        "TEXT"),
+        ("article_links",      "TEXT"),
+    ]
+    for col, coltype in new_cols:
+        if col not in existing:
+            c.execute(f"ALTER TABLE users ADD COLUMN {col} {coltype}")
+    existing_posts = [row[1] for row in c.execute("PRAGMA table_info(posts)").fetchall()]
+    if "post_type" not in existing_posts:
+        c.execute("ALTER TABLE posts ADD COLUMN post_type TEXT DEFAULT 'media'")
+    conn.commit()
+    conn.close()
+
+migrate_db()
 
 @app.route('/')
 def index():
@@ -98,6 +160,8 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if 'user_id' in session:
+        return redirect(url_for('profile', user_id=session['user_id']))
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -109,7 +173,7 @@ def login():
             session['user_name'] = user['name']
             session['account_type'] = user['account_type']
             flash(f'مرحباً {user["name"]}!', 'success')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('profile', user_id=user['id']))
         flash('بيانات الدخول غير صحيحة', 'error')
     return render_template('login.html')
 
@@ -122,31 +186,7 @@ def logout():
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    conn = get_db()
-    user = conn.execute('SELECT * FROM users WHERE id=?', (session['user_id'],)).fetchone()
-    if session['account_type'] == 'channel':
-        jobs = conn.execute('SELECT * FROM jobs WHERE channel_id=? ORDER BY created_at DESC', (session['user_id'],)).fetchall()
-        applications = conn.execute('''
-            SELECT applications.*, jobs.title as job_title, users.name as applicant_name, users.skills, users.bio
-            FROM applications
-            JOIN jobs ON applications.job_id = jobs.id
-            JOIN users ON applications.journalist_id = users.id
-            WHERE jobs.channel_id=?
-            ORDER BY applications.created_at DESC
-        ''', (session['user_id'],)).fetchall()
-        conn.close()
-        return render_template('dashboard_channel.html', user=user, jobs=jobs, applications=applications)
-    else:
-        my_apps = conn.execute('''
-            SELECT applications.*, jobs.title as job_title, users.name as channel_name
-            FROM applications
-            JOIN jobs ON applications.job_id = jobs.id
-            JOIN users ON jobs.channel_id = users.id
-            WHERE applications.journalist_id=?
-            ORDER BY applications.created_at DESC
-        ''', (session['user_id'],)).fetchall()
-        conn.close()
-        return render_template('dashboard_journalist.html', user=user, applications=my_apps)
+    return redirect(url_for('profile', user_id=session['user_id']))
 
 @app.route('/jobs')
 def jobs():
@@ -217,10 +257,163 @@ def profile(user_id):
     conn = get_db()
     user = conn.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone()
     jobs = None
+    posts = None
     if user and user['account_type'] == 'channel':
         jobs = conn.execute('SELECT * FROM jobs WHERE channel_id=? ORDER BY created_at DESC', (user_id,)).fetchall()
+    if user:
+        posts = conn.execute('SELECT * FROM posts WHERE user_id=? ORDER BY created_at DESC', (user_id,)).fetchall()
     conn.close()
-    return render_template('profile.html', user=user, jobs=jobs)
+    return render_template('profile.html', user=user, jobs=jobs, posts=posts)
+
+@app.route('/profile/<int:user_id>/update', methods=['POST'])
+def update_profile(user_id):
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return redirect(url_for('login'))
+
+    # ── Basic info ──
+    name              = request.form.get('name', '').strip()
+    last_name         = request.form.get('last_name', '').strip()
+    location          = request.form.get('location', '').strip()
+    bio               = request.form.get('bio', '').strip()
+    gender            = request.form.get('gender', '').strip()
+    civil_status      = request.form.get('civil_status', '').strip()
+    # ── Experience ──
+    specialty         = request.form.get('specialty', '').strip()
+    years_experience  = request.form.get('years_experience', '').strip()
+    education         = request.form.get('education', '').strip()
+    skills            = request.form.get('skills', '').strip()
+    preferred_channels= request.form.get('preferred_channels', '').strip()
+    extra_skills      = request.form.get('extra_skills', '').strip()
+    article_links     = request.form.get('article_links', '').strip()
+
+    ALL_VIDEO = {'.mp4','.webm','.mov','.avi','.mkv','.flv','.wmv','.m4v','.3gp','.ogv','.ts','.mts','.m2ts'}
+    IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif'}
+
+    def save_file(field, prefix, allowed):
+        if field not in request.files:
+            return None
+        f = request.files[field]
+        if not f or not f.filename:
+            return None
+        ext = os.path.splitext(secure_filename(f.filename))[1].lower()
+        if ext not in allowed:
+            return None
+        uname = f"{prefix}_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
+        full_path = os.path.join(UPLOAD_FOLDER, uname)
+        f.save(full_path)
+        # Convert video to mp4 for browser compatibility
+        if ext in ALL_VIDEO and ext != '.mp4':
+            converted = convert_to_mp4(full_path)
+            uname = os.path.basename(converted)
+        return uname
+
+    cv_filename  = save_file('cv_file',    'cv',    {'.pdf', '.doc', '.docx'})
+    intro_video  = save_file('intro_video','introv', ALL_VIDEO)
+
+    conn = get_db()
+    old = conn.execute('SELECT cv_filename, intro_video FROM users WHERE id=?', (user_id,)).fetchone()
+
+    # Delete old files if replaced
+    for field, new_val in [('cv_filename', cv_filename), ('intro_video', intro_video)]:
+        if new_val and old and old[field]:
+            old_path = os.path.join(UPLOAD_FOLDER, old[field])
+            if os.path.exists(old_path):
+                os.remove(old_path)
+
+    conn.execute('''UPDATE users SET
+        name=?, last_name=?, location=?, bio=?, gender=?, civil_status=?,
+        specialty=?, years_experience=?, education=?, skills=?,
+        preferred_channels=?, extra_skills=?, article_links=?
+        {cv} {iv}
+        WHERE id=?'''.format(
+            cv=', cv_filename=?' if cv_filename else '',
+            iv=', intro_video=?' if intro_video else ''
+        ),
+        [name, last_name, location, bio, gender, civil_status,
+         specialty, years_experience, education, skills,
+         preferred_channels, extra_skills, article_links]
+        + ([cv_filename] if cv_filename else [])
+        + ([intro_video] if intro_video else [])
+        + [user_id]
+    )
+    conn.commit()
+    conn.close()
+
+    session['user_name'] = name
+    flash('تم تحديث معلومات الملف الشخصي بنجاح!', 'success')
+    return redirect(url_for('profile', user_id=user_id))
+
+@app.route('/profile/<int:user_id>/upload-picture', methods=['POST'])
+def upload_picture(user_id):
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return redirect(url_for('login'))
+    if 'profile_image' not in request.files:
+        flash('لم يتم اختيار أي صورة', 'error')
+        return redirect(url_for('profile', user_id=user_id))
+    file = request.files['profile_image']
+    if not file or not file.filename:
+        flash('لم يتم اختيار أي صورة', 'error')
+        return redirect(url_for('profile', user_id=user_id))
+    IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif'}
+    ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+    if ext not in IMAGE_EXT:
+        flash('صيغة الصورة غير مدعومة', 'error')
+        return redirect(url_for('profile', user_id=user_id))
+    conn = get_db()
+    old = conn.execute('SELECT profile_image FROM users WHERE id=?', (user_id,)).fetchone()
+    if old and old['profile_image']:
+        old_path = os.path.join(UPLOAD_FOLDER, old['profile_image'])
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    unique_name = f"avatar_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
+    file.save(os.path.join(UPLOAD_FOLDER, unique_name))
+    conn.execute('UPDATE users SET profile_image=? WHERE id=?', (unique_name, user_id))
+    conn.commit()
+    conn.close()
+    flash('تم تحديث صورة الملف الشخصي بنجاح!', 'success')
+    return redirect(url_for('profile', user_id=user_id))
+
+@app.route('/profile/<int:user_id>/post', methods=['POST'])
+def create_post(user_id):
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return redirect(url_for('login'))
+
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    media_filename = None
+    media_type = None
+
+    VIDEO_EXT = {'.mp4','.webm','.mov','.avi','.mkv','.flv','.wmv','.m4v','.3gp','.ogv','.ts','.mts','.m2ts'}
+    IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif','.svg'}
+
+    if 'media' in request.files:
+        file = request.files['media']
+        if file and file.filename:
+            filename = secure_filename(file.filename)
+            ext = os.path.splitext(filename)[1].lower()
+            unique_name = f"post_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
+            file_path = os.path.join(UPLOAD_FOLDER, unique_name)
+            file.save(file_path)
+            if ext in VIDEO_EXT:
+                media_type = 'video'
+                # Convert to mp4 for universal browser support
+                converted = convert_to_mp4(file_path)
+                media_filename = os.path.basename(converted)
+            elif ext in IMAGE_EXT:
+                media_type = 'image'
+                media_filename = unique_name
+            else:
+                media_type = 'other'
+                media_filename = unique_name
+
+    conn = get_db()
+    conn.execute('''INSERT INTO posts (user_id, title, description, media_filename, media_type)
+                    VALUES (?, ?, ?, ?, ?)''',
+                 (user_id, title, description, media_filename, media_type))
+    conn.commit()
+    conn.close()
+    flash('تم نشر المحتوى بنجاح!', 'success')
+    return redirect(url_for('profile', user_id=user_id))
 
 @app.route('/journalists')
 def journalists():

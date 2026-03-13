@@ -140,7 +140,6 @@
         <a href="/jobs" {% if request.endpoint=='jobs' %}class="active"{% endif %}><i class="fas fa-briefcase"></i> الوظائف</a>
         <a href="/journalists" {% if request.endpoint=='journalists' %}class="active"{% endif %}><i class="fas fa-users"></i> الكوادر الإعلامية</a>
         {% if session.user_id %}
-        <a href="/dashboard" {% if request.endpoint=='dashboard' %}class="active"{% endif %}><i class="fas fa-tachometer-alt"></i> لوحة التحكم</a>
         <a href="/profile/{{ session.user_id }}"><i class="fas fa-user"></i> {{ session.user_name }}</a>
         <a href="/logout" class="btn btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> خروج</a>
         {% else %}

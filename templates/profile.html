@@ -2,84 +2,1248 @@
 {% block title %}{{ user.name }} - PressJobs{% endblock %}
 {% block extra_css %}
 <style>
-.profile-layout { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem; display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; align-items: start; }
-.profile-sidebar { }
-.profile-main { }
-.profile-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 2rem; text-align: center; }
-.big-avatar { width: 100px; height: 100px; border-radius: 50%; background: var(--gradient-blue); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1.2rem; border: 4px solid rgba(244,117,32,0.4); }
-.profile-card h2 { font-size: 1.3rem; font-weight: 900; margin-bottom: 0.4rem; }
-.profile-card .role { color: var(--orange); font-size: 0.85rem; font-weight: 700; margin-bottom: 0.8rem; }
-.profile-card .location { color: var(--text-muted); font-size: 0.83rem; margin-bottom: 1rem; }
-.profile-section { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
-.section-title-sm { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; color: var(--orange); display: flex; align-items: center; gap: 0.5rem; }
-.skill-chip { background: rgba(34,85,204,0.15); border: 1px solid rgba(34,85,204,0.3); color: #6fa0ff; padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.82rem; display: inline-block; margin: 0.2rem; }
-.job-mini { display: flex; align-items: center; gap: 1rem; padding: 0.8rem; border-radius: 10px; background: rgba(255,255,255,0.03); margin-bottom: 0.6rem; text-decoration: none; color: inherit; transition: all 0.2s; border: 1px solid transparent; }
+/* ── Layout ── */
+.profile-layout {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+@media(max-width:760px) { .profile-layout { grid-template-columns: 1fr; } }
+
+/* ── Sidebar card ── */
+.profile-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: sticky;
+    top: 1.5rem;
+}
+.big-avatar {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    background: var(--gradient-blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.8rem;
+    margin: 0 auto 1.2rem;
+    border: 4px solid rgba(244,117,32,0.4);
+    overflow: hidden;
+}
+.big-avatar img { width:100%; height:100%; object-fit:cover; }
+
+/* ── Avatar upload wrapper (owner only) ── */
+.avatar-wrapper {
+    position: relative;
+    width: 110px;
+    margin: 0 auto 1.2rem;
+}
+.avatar-wrapper .big-avatar { margin: 0; }
+.avatar-change-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s;
+    pointer-events: none;
+    gap: 0.2rem;
+}
+.avatar-wrapper:hover .avatar-change-overlay { opacity: 1; }
+.avatar-change-overlay i { font-size: 1.3rem; color: #fff; }
+.avatar-change-overlay span { font-size: 0.65rem; color: rgba(255,255,255,0.85); font-weight: 600; }
+.avatar-wrapper input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    border-radius: 50%;
+    width: 100%; height: 100%;
+}
+.profile-card h2 { font-size: 1.25rem; font-weight: 900; margin-bottom: 0.3rem; }
+.profile-card .role { color: var(--orange); font-size: 0.82rem; font-weight: 700; margin-bottom: 0.8rem; }
+.profile-card .location { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1rem; }
+.profile-divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+
+/* ── Stats row on sidebar ── */
+.sidebar-stats { display: flex; justify-content: center; gap: 1.5rem; margin: 0.5rem 0; }
+.stat-item { text-align: center; }
+.stat-num { font-size: 1.2rem; font-weight: 900; color: var(--orange); }
+.stat-label { font-size: 0.72rem; color: var(--text-muted); }
+
+/* ── Tabs ── */
+.profile-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.8rem; flex-wrap: wrap; }
+.profile-tab {
+    flex: 1;
+    min-width: 90px;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 0.8rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+.profile-tab:hover { border-color: rgba(244,117,32,0.4); color: var(--orange); }
+.profile-tab.active {
+    background: rgba(244,117,32,0.12);
+    border-color: rgba(244,117,32,0.5);
+    color: var(--orange);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Sections ── */
+.profile-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.6rem;
+    margin-bottom: 1.5rem;
+}
+.section-title-sm {
+    font-size: 1rem; font-weight: 700; margin-bottom: 1rem;
+    color: var(--orange); display: flex; align-items: center; gap: 0.5rem;
+}
+
+/* ── Form inputs ── */
+.pf-input, .pf-textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.pf-input:focus, .pf-textarea:focus { outline: none; border-color: var(--orange); }
+.pf-textarea { resize: vertical; min-height: 90px; }
+
+/* ── Upload zone ── */
+.upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+}
+.upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--orange);
+    background: rgba(244,117,32,0.06);
+}
+.upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width:100%; height:100%;
+}
+.upload-zone i { font-size: 2rem; color: var(--text-muted); margin-bottom: 0.6rem; display: block; }
+.upload-zone p { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
+.upload-zone .hint { font-size: 0.75rem; color: var(--text-muted); opacity: 0.6; margin-top: 0.3rem; }
+
+/* ── Post type selector ── */
+.post-type-row { display: flex; gap: 0.6rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.post-type-btn {
+    padding: 0.45rem 1rem; border-radius: 20px;
+    border: 1.5px solid var(--border); background: transparent;
+    color: var(--text-muted); font-size: 0.82rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+}
+.post-type-btn.active, .post-type-btn:hover {
+    border-color: var(--orange); color: var(--orange);
+    background: rgba(244,117,32,0.1);
+}
+
+/* ── Media grid ── */
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.media-grid-item {
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    aspect-ratio: 1;
+}
+.media-grid-item:hover {
+    border-color: rgba(244,117,32,0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+}
+.media-grid-item img,
+.media-grid-item video {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+}
+.media-type-badge {
+    position: absolute; top: 0.5rem; right: 0.5rem;
+    background: rgba(0,0,0,0.7); color: #fff;
+    font-size: 0.7rem; padding: 0.2rem 0.5rem;
+    border-radius: 6px; backdrop-filter: blur(4px);
+}
+.media-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%);
+    opacity: 0; transition: opacity 0.25s;
+    display: flex; align-items: flex-end; padding: 0.7rem;
+}
+.media-grid-item:hover .media-overlay { opacity: 1; }
+.media-overlay-text { font-size: 0.78rem; color: #fff; font-weight: 600; line-height: 1.4; }
+
+/* ── Lightbox ── */
+.lightbox-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.93);
+    z-index: 9999;
+    align-items: center; justify-content: center;
+    flex-direction: column; padding: 2rem;
+}
+.lightbox-backdrop.open { display: flex; }
+.lightbox-content { max-width: 880px; width: 100%; }
+.lightbox-content img,
+.lightbox-content video {
+    max-width: 100%; max-height: 72vh;
+    border-radius: 14px; display: block; margin: 0 auto;
+}
+.lightbox-info { margin-top: 1rem; text-align: center; color: rgba(255,255,255,0.85); }
+.lightbox-info h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.3rem; }
+.lightbox-info p { font-size: 0.85rem; color: rgba(255,255,255,0.5); }
+.lightbox-close {
+    position: fixed; top: 1.2rem; left: 1.2rem;
+    background: rgba(255,255,255,0.1); border: none; color: #fff;
+    width: 42px; height: 42px; border-radius: 50%;
+    font-size: 1.1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s; z-index: 10000;
+}
+.lightbox-close:hover { background: rgba(244,117,32,0.5); }
+
+/* ── Text-only post cards ── */
+.post-card {
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.1rem 1.2rem; margin-bottom: 1rem;
+    background: rgba(255,255,255,0.02); transition: border-color 0.2s;
+}
+.post-card:hover { border-color: rgba(244,117,32,0.25); }
+.post-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+.post-card-title { font-weight: 700; font-size: 0.95rem; }
+.post-card-date { font-size: 0.75rem; color: var(--text-muted); }
+.post-card-desc { color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; }
+
+/* ── Skills chips ── */
+.skill-chip {
+    background: rgba(34,85,204,0.15); border: 1px solid rgba(34,85,204,0.3);
+    color: #6fa0ff; padding: 0.4rem 0.9rem; border-radius: 8px;
+    font-size: 0.82rem; display: inline-block; margin: 0.2rem;
+}
+
+/* ── Job mini ── */
+.job-mini {
+    display: flex; align-items: center; gap: 1rem; padding: 0.8rem;
+    border-radius: 10px; background: rgba(255,255,255,0.03);
+    margin-bottom: 0.6rem; text-decoration: none; color: inherit;
+    transition: all 0.2s; border: 1px solid transparent;
+}
 .job-mini:hover { border-color: rgba(244,117,32,0.3); background: rgba(244,117,32,0.05); }
-.job-mini-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--gradient-blue); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-@media(max-width:700px) { .profile-layout { grid-template-columns: 1fr; } }
+.job-mini-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--gradient-blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+}
+
+/* ── Public info display ── */
+.pub-info-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+.pub-info-row {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.65rem 0.9rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+.pub-info-label {
+    min-width: 140px; font-size: 0.82rem; font-weight: 700;
+    color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;
+}
+.pub-info-label i { color: var(--orange); width: 14px; }
+.pub-info-val { font-size: 0.88rem; color: var(--text); }
+
+/* ── Sidebar principal info list ── */
+.sidebar-info-list { display: flex; flex-direction: column; gap: 0.5rem; text-align: right; }
+.sidebar-info-item {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.82rem; padding: 0.3rem 0;
+}
+.sii-label { color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; }
+.sii-label i { color: var(--orange); width: 13px; font-size: 0.75rem; }
+.sii-val { font-weight: 700; color: var(--text); }
+
+/* ── Channel tags ── */
+.channel-tag {
+    display: inline-block; margin: 0.2rem;
+    background: rgba(244,117,32,0.1); border: 1px solid rgba(244,117,32,0.3);
+    color: var(--orange); padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+}
+
+/* ── Public file buttons ── */
+.pub-files-row { display: flex; flex-direction: column; gap: 1rem; }
+.pub-file-btn {
+    display: flex; align-items: center; gap: 0.8rem;
+    padding: 0.9rem 1.2rem;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 12px; text-decoration: none; color: var(--text);
+    transition: all 0.2s; font-size: 0.9rem; font-weight: 600;
+}
+.pub-file-btn:hover { border-color: var(--orange); background: rgba(244,117,32,0.07); color: var(--orange); }
+.pub-file-btn i:first-child { font-size: 1.3rem; color: var(--orange); }
+.pub-file-dl { margin-right: auto; font-size: 0.9rem; opacity: 0.5; }
+.pub-video-wrap { width: 100%; }
+
+/* ── Article links ── */
+.article-links-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.article-link-item {
+    display: flex; align-items: center; gap: 0.7rem;
+    padding: 0.65rem 1rem;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 10px; text-decoration: none; color: var(--text);
+    font-size: 0.85rem; transition: all 0.2s; overflow: hidden;
+}
+.article-link-item:hover { border-color: var(--orange); color: var(--orange); }
+.article-link-item i { color: var(--orange); flex-shrink: 0; }
+.article-link-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+.empty-state i { font-size: 3.5rem; opacity: 0.12; margin-bottom: 1rem; display: block; }
+
+/* ── Edit form helpers ── */
+.edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media(max-width:600px) { .edit-grid { grid-template-columns: 1fr; } }
+.field-label { font-size: 0.82rem; font-weight: 700; color: var(--orange); display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
+.field-label .req { color: #f47520; }
+.radio-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.3rem; }
+.radio-opt { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; cursor: pointer; color: var(--text); }
+.radio-opt input[type="radio"] { accent-color: var(--orange); width: 16px; height: 16px; cursor: pointer; }
+.file-exists-row { display: flex; align-items: center; gap: 0.6rem; background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.25); border-radius: 10px; padding: 0.6rem 0.9rem; margin-bottom: 0.6rem; font-size: 0.85rem; }
+.file-view-btn { margin-right: auto; background: rgba(255,255,255,0.07); border: 1px solid var(--border); border-radius: 7px; padding: 0.25rem 0.7rem; font-size: 0.78rem; color: var(--text); text-decoration: none; transition: all 0.2s; }
+.file-view-btn:hover { border-color: var(--orange); color: var(--orange); }
 </style>
 {% endblock %}
+
 {% block content %}
+
+<!-- ══ Lightbox ══ -->
+<div class="lightbox-backdrop" id="lightbox">
+    <button class="lightbox-close" id="lightbox-close"><i class="fas fa-times"></i></button>
+    <div class="lightbox-content">
+        <div id="lightbox-media"></div>
+        <div class="lightbox-info">
+            <h4 id="lightbox-title"></h4>
+            <p id="lightbox-desc"></p>
+        </div>
+    </div>
+</div>
+
 <div class="profile-layout">
+{% set is_owner = session.get('user_id') == user.id %}
+
+    <!-- ════ SIDEBAR ════ -->
     <div class="profile-sidebar">
         <div class="profile-card">
-            <div class="big-avatar">
+
+            <!-- Avatar -->
+            {% if is_owner %}
+            <form method="POST" action="/profile/{{ user.id }}/upload-picture"
+                  enctype="multipart/form-data" id="avatar-form">
+                <div class="avatar-wrapper" title="انقر لتغيير الصورة">
+                    <div class="big-avatar">
+                        {% if user.profile_image %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.name }}" id="avatar-preview-img" />
+                        {% else %}
+                        <i class="fas fa-{% if user.account_type == 'channel' %}tv{% else %}user-tie{% endif %}" id="avatar-icon"></i>
+                        {% endif %}
+                    </div>
+                    <div class="avatar-change-overlay">
+                        <i class="fas fa-camera"></i>
+                        <span>تغيير الصورة</span>
+                    </div>
+                    <input type="file" name="profile_image" id="avatar-file-input"
+                           accept="image/*" />
+                </div>
+            </form>
+            {% else %}
+            <div class="big-avatar" style="margin:0 auto 1.2rem;">
+                {% if user.profile_image %}
+                <img src="{{ url_for('static', filename='uploads/' + user.profile_image) }}" alt="{{ user.name }}" />
+                {% else %}
                 <i class="fas fa-{% if user.account_type == 'channel' %}tv{% else %}user-tie{% endif %}"></i>
+                {% endif %}
             </div>
-            <h2>{{ user.name }}</h2>
+            {% endif %}
+
+            <!-- Name & role -->
+            <h2>{{ user.name }}{% if user.last_name %} {{ user.last_name }}{% endif %}</h2>
             <div class="role">
                 <i class="fas fa-{% if user.account_type == 'channel' %}tv{% else %}user-tie{% endif %}"></i>
                 {{ 'قناة إعلامية' if user.account_type == 'channel' else 'كادر إعلامي' }}
             </div>
-            {% if user.location %}<div class="location"><i class="fas fa-map-marker-alt"></i> {{ user.location }}</div>{% endif %}
-            {% if user.bio %}<p style="color:var(--text-muted);font-size:0.85rem;line-height:1.7;margin-bottom:1rem">{{ user.bio }}</p>{% endif %}
-            <div style="font-size:0.75rem;color:var(--text-muted)">
-                <i class="fas fa-calendar"></i> عضو منذ {{ user.created_at[:10] }}
+
+            {% if user.specialty %}
+            <div style="font-size:0.82rem;color:var(--orange);font-weight:600;margin-bottom:0.5rem;">
+                <i class="fas fa-star" style="font-size:0.7rem;"></i> {{ user.specialty }}
+            </div>
+            {% endif %}
+
+            {% if user.location %}
+            <div class="location"><i class="fas fa-map-marker-alt"></i> {{ user.location }}</div>
+            {% endif %}
+
+            <hr class="profile-divider">
+
+            <!-- Principal info block -->
+            <div class="sidebar-info-list">
+                {% if user.gender %}
+                <div class="sidebar-info-item">
+                    <span class="sii-label"><i class="fas fa-venus-mars"></i> الجنس</span>
+                    <span class="sii-val">{{ user.gender }}</span>
+                </div>
+                {% endif %}
+                {% if user.civil_status %}
+                <div class="sidebar-info-item">
+                    <span class="sii-label"><i class="fas fa-heart"></i> الحالة المدنية</span>
+                    <span class="sii-val">{{ user.civil_status }}</span>
+                </div>
+                {% endif %}
+                {% if user.years_experience %}
+                <div class="sidebar-info-item">
+                    <span class="sii-label"><i class="fas fa-clock"></i> الخبرة</span>
+                    <span class="sii-val">{{ user.years_experience }} سنوات</span>
+                </div>
+                {% endif %}
+                <div class="sidebar-info-item">
+                    <span class="sii-label"><i class="fas fa-calendar-alt"></i> عضو منذ</span>
+                    <span class="sii-val">{{ user.created_at[:10] }}</span>
+                </div>
+            </div>
+
+            <hr class="profile-divider">
+
+            <!-- Stats -->
+            <div class="sidebar-stats">
+                <div class="stat-item">
+                    <div class="stat-num">{{ posts|length if posts else 0 }}</div>
+                    <div class="stat-label">منشور</div>
+                </div>
+                {% if user.account_type == 'channel' and jobs %}
+                <div class="stat-item">
+                    <div class="stat-num">{{ jobs|length }}</div>
+                    <div class="stat-label">وظيفة</div>
+                </div>
+                {% endif %}
+                {% if user.years_experience %}
+                <div class="stat-item">
+                    <div class="stat-num">{{ user.years_experience }}</div>
+                    <div class="stat-label">سنة خبرة</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if user.bio %}
+            <hr class="profile-divider">
+            <p style="color:var(--text-muted);font-size:0.83rem;line-height:1.7;text-align:right">{{ user.bio }}</p>
+            {% endif %}
+
+            {% if user.account_type == 'journalist' and user.skills %}
+            <hr class="profile-divider">
+            <div style="text-align:right">
+                {% for skill in user.skills.split(',')[:5] %}
+                <span class="skill-chip">{{ skill.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- CV download button (visible to all) -->
+            {% if user.cv_filename %}
+            <hr class="profile-divider">
+            <a href="{{ url_for('static', filename='uploads/' + user.cv_filename) }}" target="_blank" class="pub-file-btn" style="justify-content:center;">
+                <i class="fas fa-file-alt"></i>
+                <span>تحميل السيرة الذاتية</span>
+                <i class="fas fa-download pub-file-dl"></i>
+            </a>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ════ MAIN ════ -->
+    <div class="profile-main">
+
+        <!-- ══════════════════════════════════
+             OWNER VIEW — 3 tabs
+        ══════════════════════════════════ -->
+        {% if is_owner %}
+        <div class="profile-tabs">
+            <div class="profile-tab active" data-tab="posts">
+                <i class="fas fa-th"></i> منشوراتي
+            </div>
+            <div class="profile-tab" data-tab="publish">
+                <i class="fas fa-paper-plane"></i> نشر جديد
+            </div>
+            <div class="profile-tab" data-tab="edit">
+                <i class="fas fa-user-edit"></i> تعديل الملف
             </div>
         </div>
-    </div>
 
-    <div class="profile-main">
-        {% if user.account_type == 'journalist' %}
-        {% if user.skills %}
-        <div class="profile-section">
-            <h3 class="section-title-sm"><i class="fas fa-tools"></i> المهارات</h3>
-            {% for skill in user.skills.split(',') %}
-            <span class="skill-chip">{{ skill.strip() }}</span>
-            {% endfor %}
-        </div>
-        {% endif %}
+        <!-- ── Tab 1: My Posts & Videos ── -->
+        <div class="tab-panel active" id="tab-posts">
+            {% if posts %}
+                {% set media_posts = posts | selectattr('media_filename') | list %}
+                {% set text_posts  = posts | rejectattr('media_filename') | list %}
 
-        {% if user.education %}
-        <div class="profile-section">
-            <h3 class="section-title-sm"><i class="fas fa-graduation-cap"></i> المؤهل الدراسي</h3>
-            <p style="color:var(--text-muted);font-size:0.9rem">{{ user.education }}</p>
-        </div>
-        {% endif %}
-
-        {% else %}
-        <!-- CHANNEL JOBS -->
-        {% if jobs %}
-        <div class="profile-section">
-            <h3 class="section-title-sm"><i class="fas fa-briefcase"></i> الوظائف المنشورة ({{ jobs|length }})</h3>
-            {% for job in jobs %}
-            <a href="/job/{{ job.id }}" class="job-mini">
-                <div class="job-mini-icon"><i class="fas fa-{{ {'journalist':'newspaper','photographer':'camera','content':'play-circle','editor':'film','presenter':'microphone','reporter':'broadcast-tower'}.get(job.category,'briefcase') }}"></i></div>
-                <div>
-                    <div style="font-weight:700;font-size:0.9rem">{{ job.title }}</div>
-                    <div style="font-size:0.78rem;color:var(--text-muted)">{{ job.created_at[:10] }}</div>
+                {% if media_posts %}
+                <div class="profile-section">
+                    <h3 class="section-title-sm">
+                        <i class="fas fa-photo-video"></i> الصور والفيديوهات
+                        <span style="margin-right:auto;font-size:0.78rem;color:var(--text-muted);font-weight:400;">{{ media_posts|length }} عنصر</span>
+                    </h3>
+                    <div class="media-grid">
+                        {% for post in media_posts %}
+                        <div class="media-grid-item"
+                             data-title="{{ post.title or '' }}"
+                             data-desc="{{ post.description or '' }}"
+                             data-src="{{ url_for('static', filename='uploads/' + post.media_filename) }}"
+                             data-type="{{ post.media_type }}">
+                            {% if post.media_type == 'image' %}
+                                <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" alt="{{ post.title or 'صورة' }}" loading="lazy" />
+                                <span class="media-type-badge"><i class="fas fa-image"></i></span>
+                            {% elif post.media_type == 'video' %}
+                                <video muted preload="none" style="pointer-events:none;">
+                                    <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" type="video/mp4">
+                                </video>
+                                <span class="media-type-badge"><i class="fas fa-play"></i> فيديو</span>
+                            {% else %}
+                                <div class="media-no-thumb">
+                                    <i class="fas fa-file"></i>
+                                    <span>{{ post.title or 'ملف' }}</span>
+                                </div>
+                            {% endif %}
+                            <div class="media-overlay">
+                                <div class="media-overlay-text">{{ post.title or post.description or '' }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
-                <span class="badge badge-blue" style="margin-right:auto">{{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}</span>
-            </a>
-            {% endfor %}
+                {% endif %}
+
+                {% if text_posts %}
+                <div class="profile-section">
+                    <h3 class="section-title-sm"><i class="fas fa-align-right"></i> المنشورات النصية ({{ text_posts|length }})</h3>
+                    {% for post in text_posts %}
+                    <div class="post-card">
+                        <div class="post-card-header">
+                            <span class="post-card-title">{{ post.title or 'منشور' }}</span>
+                            <span class="post-card-date"><i class="fas fa-clock"></i> {{ post.created_at[:10] }}</span>
+                        </div>
+                        {% if post.description %}<p class="post-card-desc">{{ post.description }}</p>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-photo-video"></i>
+                <p>لم تنشر أي محتوى بعد</p>
+                <button class="btn btn-primary" style="margin-top:1rem" onclick="switchTab('publish')">
+                    <i class="fas fa-plus"></i> أضف أول منشور
+                </button>
+            </div>
+            {% endif %}
         </div>
+
+        <!-- ── Tab 2: Publish New ── -->
+        <div class="tab-panel" id="tab-publish">
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-plus-circle"></i> نشر جديد</h3>
+                <div class="post-type-row">
+                    <button type="button" class="post-type-btn active" data-ptype="media">
+                        <i class="fas fa-photo-video"></i> صورة / فيديو
+                    </button>
+                    {% if user.account_type == 'channel' %}
+                    <button type="button" class="post-type-btn" data-ptype="job">
+                        <i class="fas fa-briefcase"></i> وظيفة جديدة
+                    </button>
+                    {% endif %}
+                </div>
+
+                <!-- Media form -->
+                <div id="ptype-media">
+                    <form method="POST" action="/profile/{{ user.id }}/post" enctype="multipart/form-data">
+                        <div style="display:grid;gap:1rem;">
+                            <div>
+                                <label class="section-title-sm" style="font-size:0.82rem">العنوان <span style="opacity:0.5;font-weight:400">(اختياري)</span></label>
+                                <input class="pf-input" type="text" name="title" placeholder="عنوان المنشور" />
+                            </div>
+                            <div>
+                                <label class="section-title-sm" style="font-size:0.82rem">الوصف</label>
+                                <textarea class="pf-textarea" name="description" placeholder="اكتب تفاصيل المحتوى..." style="min-height:80px;"></textarea>
+                            </div>
+                            <div>
+                                <label class="section-title-sm" style="font-size:0.82rem">الملف المرفق</label>
+                                <div class="upload-zone" id="media-zone">
+                                    <input type="file" name="media" accept="image/*,video/*" id="media-input" />
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>اسحب صورة أو فيديو هنا أو اضغط للاختيار</p>
+                                    <div class="hint">جميع صيغ الصور والفيديو مدعومة</div>
+                                    <div id="media-name" style="margin-top:0.7rem;font-size:0.82rem;color:var(--orange);display:none;"></div>
+                                </div>
+                                <div id="media-preview" style="margin-top:0.8rem;display:none;"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top:1.2rem;text-align:left">
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> نشر</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Job form (channels only) -->
+                {% if user.account_type == 'channel' %}
+                <div id="ptype-job" style="display:none;">
+                    <form method="POST" action="/post-job">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div style="grid-column:span 2;">
+                                <label class="section-title-sm" style="font-size:0.82rem">عنوان الوظيفة</label>
+                                <input class="pf-input" type="text" name="title" placeholder="مثال: مذيع أخبار" required />
+                            </div>
+                            <div>
+                                <label class="section-title-sm" style="font-size:0.82rem">التصنيف</label>
+                                <select class="pf-input" name="category" required>
+                                    <option value="">اختر التصنيف</option>
+                                    <option value="journalist">صحفي</option>
+                                    <option value="photographer">مصور</option>
+                                    <option value="content">صانع محتوى</option>
+                                    <option value="editor">مونتير</option>
+                                    <option value="presenter">مذيع</option>
+                                    <option value="reporter">مراسل</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="section-title-sm" style="font-size:0.82rem">نوع العقد</label>
+                                <select class="pf-input" name="job_type">
+                                    <option value="fulltime">دوام كامل</option>
+                                    <option value="parttime">دوام جزئي</option>
+                                    <option value="freelance">مستقل</option>
+                                    <option value="internship">تدريب</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="section-title-sm" style="font-size:0.82rem">الموقع</label>
+                                <input class="pf-input" type="text" name="location" placeholder="مثال: الجزائر العاصمة" />
+                            </div>
+                            <div>
+                                <label class="section-title-sm" style="font-size:0.82rem">الراتب <span style="opacity:0.5;font-weight:400">(اختياري)</span></label>
+                                <input class="pf-input" type="text" name="salary" placeholder="مثال: 60,000 دج" />
+                            </div>
+                            <div style="grid-column:span 2;">
+                                <label class="section-title-sm" style="font-size:0.82rem">وصف الوظيفة</label>
+                                <textarea class="pf-textarea" name="description" placeholder="اشرح تفاصيل الوظيفة والمهام المطلوبة..." required style="min-height:100px;"></textarea>
+                            </div>
+                            <div style="grid-column:span 2;">
+                                <label class="section-title-sm" style="font-size:0.82rem">المتطلبات</label>
+                                <textarea class="pf-textarea" name="requirements" placeholder="الخبرة، المؤهلات، المهارات..."></textarea>
+                            </div>
+                        </div>
+                        <div style="margin-top:1.2rem;text-align:left">
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-briefcase"></i> نشر الوظيفة</button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Tab 3: Edit Profile ── -->
+        <div class="tab-panel" id="tab-edit">
+        <form method="POST" action="/profile/{{ user.id }}/update" enctype="multipart/form-data">
+
+            <!-- ① المعلومات الأساسية -->
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-id-card"></i> ١ - المعلومات الأساسية</h3>
+                <div class="edit-grid">
+                    <div>
+                        <label class="field-label">الاسم الأول <span class="req">*</span></label>
+                        <input class="pf-input" type="text" name="name" value="{{ user.name }}" required />
+                    </div>
+                    <div>
+                        <label class="field-label">اللقب</label>
+                        <input class="pf-input" type="text" name="last_name" value="{{ user.last_name or '' }}" placeholder="اللقب / الكنية" />
+                    </div>
+                    <div>
+                        <label class="field-label">الموقع الجغرافي</label>
+                        <input class="pf-input" type="text" name="location" value="{{ user.location or '' }}" placeholder="مثال: الجزائر العاصمة" />
+                    </div>
+                    <div>
+                        <label class="field-label">الجنس</label>
+                        <div class="radio-row">
+                            <label class="radio-opt">
+                                <input type="radio" name="gender" value="ذكر" {% if user.gender == 'ذكر' %}checked{% endif %}> ذكر
+                            </label>
+                            <label class="radio-opt">
+                                <input type="radio" name="gender" value="أنثى" {% if user.gender == 'أنثى' %}checked{% endif %}> أنثى
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="field-label">الحالة المدنية</label>
+                        <div class="radio-row">
+                            <label class="radio-opt"><input type="radio" name="civil_status" value="أعزب" {% if user.civil_status == 'أعزب' %}checked{% endif %}> أعزب</label>
+                            <label class="radio-opt"><input type="radio" name="civil_status" value="متزوج" {% if user.civil_status == 'متزوج' %}checked{% endif %}> متزوج</label>
+                            <label class="radio-opt"><input type="radio" name="civil_status" value="أخرى"  {% if user.civil_status == 'أخرى'  %}checked{% endif %}> أخرى</label>
+                        </div>
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label class="field-label">نبذة تعريفية</label>
+                        <textarea class="pf-textarea" name="bio" placeholder="أخبرنا عن نفسك...">{{ user.bio or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ② الخبرة والمجال -->
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-briefcase"></i> ٢ - الخبرة والمجال</h3>
+                <div class="edit-grid">
+                    <div style="grid-column:span 2;">
+                        <label class="field-label">التخصص / نوع الصحافة</label>
+                        <input class="pf-input" type="text" name="specialty"
+                               value="{{ user.specialty or '' }}"
+                               placeholder="مثال: صحفي ميداني، صحفي اقتصادي، مصور صحفي، صحفي رقمي..." />
+                    </div>
+                    <div>
+                        <label class="field-label">عدد سنوات الخبرة</label>
+                        <input class="pf-input" type="number" name="years_experience" min="0" max="60"
+                               value="{{ user.years_experience or '' }}" placeholder="0" />
+                    </div>
+                    <div>
+                        <label class="field-label">المهارات التقنية <span style="opacity:0.5;font-weight:400">(افصل بفاصلة)</span></label>
+                        <input class="pf-input" type="text" name="skills"
+                               value="{{ user.skills or '' }}"
+                               placeholder="مثال: تصوير، مونتاج، كتابة، تحرير..." />
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label class="field-label">الشهادات الأكاديمية والتدريبية</label>
+                        <textarea class="pf-textarea" name="education"
+                                  placeholder="اذكر شهاداتك ودوراتك التدريبية...">{{ user.education or '' }}</textarea>
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label class="field-label">القنوات / الجرائد المفضلة للتقديم</label>
+                        <input class="pf-input" type="text" name="preferred_channels"
+                               value="{{ user.preferred_channels or '' }}"
+                               placeholder="مثال: قناة النهار، الشروق، المساء..." />
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">افصل بفاصلة بين كل قناة أو جريدة</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ③ الملفات الإعلامية -->
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-folder-open"></i> ٣ - الملفات الإعلامية</h3>
+                <div class="edit-grid">
+
+                    <!-- CV -->
+                    <div style="grid-column:span 2;">
+                        <label class="field-label"><i class="fas fa-file-alt"></i> السيرة الذاتية (CV)</label>
+                        {% if user.cv_filename %}
+                        <div class="file-exists-row">
+                            <i class="fas fa-check-circle" style="color:#4caf50"></i>
+                            <span>تم رفع السيرة الذاتية</span>
+                            <a href="{{ url_for('static', filename='uploads/' + user.cv_filename) }}" target="_blank" class="file-view-btn">
+                                <i class="fas fa-eye"></i> عرض
+                            </a>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;">لتغيير الملف اختر ملفاً جديداً أدناه</div>
+                        {% endif %}
+                        <div class="upload-zone" id="cv-zone">
+                            <input type="file" name="cv_file" id="cv-input" accept=".pdf,.doc,.docx" />
+                            <i class="fas fa-file-pdf"></i>
+                            <p>{{ 'استبدال ملف CV' if user.cv_filename else 'رفع ملف CV' }}</p>
+                            <div class="hint">PDF، DOC، DOCX</div>
+                            <div id="cv-name" style="margin-top:0.5rem;font-size:0.8rem;color:var(--orange);display:none;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Intro video -->
+                    <div style="grid-column:span 2;">
+                        <label class="field-label"><i class="fas fa-video"></i> فيديو تقديم الأخبار</label>
+                        {% if user.intro_video %}
+                        <div class="file-exists-row">
+                            <i class="fas fa-check-circle" style="color:#4caf50"></i>
+                            <span>تم رفع فيديو التقديم</span>
+                            <a href="{{ url_for('static', filename='uploads/' + user.intro_video) }}" target="_blank" class="file-view-btn">
+                                <i class="fas fa-play"></i> مشاهدة
+                            </a>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;">لتغيير الفيديو اختر ملفاً جديداً</div>
+                        {% endif %}
+                        <div class="upload-zone" id="introv-zone">
+                            <input type="file" name="intro_video" id="introv-input" accept="video/*" />
+                            <i class="fas fa-film"></i>
+                            <p>{{ 'استبدال الفيديو' if user.intro_video else 'رفع فيديو تقديم الأخبار' }}</p>
+                            <div class="hint">MP4، WEBM، MOV — بحد أقصى 200 ميغابايت</div>
+                            <div id="introv-name" style="margin-top:0.5rem;font-size:0.8rem;color:var(--orange);display:none;"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ④ معرض الأعمال -->
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-images"></i> ٤ - معرض الأعمال</h3>
+                <div class="edit-grid">
+                    <div style="grid-column:span 2;">
+                        <label class="field-label">روابط مقالات منشورة أو تقارير</label>
+                        <textarea class="pf-textarea" name="article_links"
+                                  placeholder="ضع رابطاً في كل سطر&#10;https://example.com/article1&#10;https://example.com/article2">{{ user.article_links or '' }}</textarea>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">رابط واحد في كل سطر</div>
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <label class="field-label"><i class="fas fa-photo-video"></i> صور وفيديوهات ميدانية</label>
+                        <p style="font-size:0.82rem;color:var(--text-muted);margin:0 0 0.5rem;">
+                            استخدم تبويب <strong style="color:var(--orange)">نشر جديد</strong> لإضافة صور وفيديوهات ميدانية إلى معرض أعمالك.
+                        </p>
+                        <button type="button" class="btn btn-primary" style="padding:0.5rem 1.2rem;font-size:0.85rem;"
+                                onclick="switchTab('publish')">
+                            <i class="fas fa-plus"></i> إضافة صور / فيديوهات
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ⑤ ملاحظات إضافية -->
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-star"></i> ٥ - مهارات وتخصصات إضافية</h3>
+                <textarea class="pf-textarea" name="extra_skills" style="min-height:90px;"
+                          placeholder="أي مهارات أو تخصصات إضافية تريد ذكرها...">{{ user.extra_skills or '' }}</textarea>
+            </div>
+
+            <div style="padding:0 0 2rem;text-align:left">
+                <button class="btn btn-primary" type="submit" style="padding:0.9rem 2.5rem;font-size:1rem;">
+                    <i class="fas fa-save"></i> حفظ جميع التغييرات
+                </button>
+            </div>
+
+        </form>
+        </div>
+
+        <!-- ══════════════════════════════════
+             PUBLIC / VISITOR VIEW
+        ══════════════════════════════════ -->
         {% else %}
-        <div style="text-align:center;padding:3rem;color:var(--text-muted)">
-            <i class="fas fa-briefcase" style="font-size:3rem;opacity:0.2;margin-bottom:1rem"></i>
-            <p>لا توجد وظائف منشورة</p>
+        <div class="profile-tabs">
+            <div class="profile-tab active" data-tab="pub-posts">
+                <i class="fas fa-th"></i> المنشورات
+                {% if posts %}<span style="background:var(--orange);color:#fff;border-radius:10px;font-size:0.7rem;padding:0.1rem 0.45rem;margin-right:0.3rem;">{{ posts|length }}</span>{% endif %}
+            </div>
+            {% if user.account_type == 'journalist' and (user.skills or user.education or user.specialty or user.cv_filename or user.intro_video or user.article_links or user.extra_skills or user.gender or user.civil_status) %}
+            <div class="profile-tab" data-tab="pub-info">
+                <i class="fas fa-user"></i> معلومات
+            </div>
+            {% endif %}
+            {% if user.account_type == 'channel' and jobs %}
+            <div class="profile-tab" data-tab="pub-jobs">
+                <i class="fas fa-briefcase"></i> وظائف ({{ jobs|length }})
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Public: Posts & Videos -->
+        <div class="tab-panel active" id="tab-pub-posts">
+            {% if posts %}
+                {% set media_posts = posts | selectattr('media_filename') | list %}
+                {% set text_posts  = posts | rejectattr('media_filename') | list %}
+
+                {% if media_posts %}
+                <div class="profile-section">
+                    <h3 class="section-title-sm">
+                        <i class="fas fa-photo-video"></i> الصور والفيديوهات
+                        <span style="margin-right:auto;font-size:0.78rem;color:var(--text-muted);font-weight:400;">{{ media_posts|length }} عنصر</span>
+                    </h3>
+                    <div class="media-grid">
+                        {% for post in media_posts %}
+                        <div class="media-grid-item"
+                             data-title="{{ post.title or '' }}"
+                             data-desc="{{ post.description or '' }}"
+                             data-src="{{ url_for('static', filename='uploads/' + post.media_filename) }}"
+                             data-type="{{ post.media_type }}">
+                            {% if post.media_type == 'image' %}
+                                <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" alt="{{ post.title or 'صورة' }}" loading="lazy" />
+                                <span class="media-type-badge"><i class="fas fa-image"></i></span>
+                            {% elif post.media_type == 'video' %}
+                                <video muted preload="none" style="pointer-events:none;">
+                                    <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" type="video/mp4">
+                                </video>
+                                <span class="media-type-badge"><i class="fas fa-play"></i> فيديو</span>
+                            {% endif %}
+                            <div class="media-overlay">
+                                <div class="media-overlay-text">{{ post.title or post.description or '' }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if text_posts %}
+                <div class="profile-section">
+                    <h3 class="section-title-sm"><i class="fas fa-align-right"></i> منشورات</h3>
+                    {% for post in text_posts %}
+                    <div class="post-card">
+                        <div class="post-card-header">
+                            <span class="post-card-title">{{ post.title or 'منشور' }}</span>
+                            <span class="post-card-date"><i class="fas fa-clock"></i> {{ post.created_at[:10] }}</span>
+                        </div>
+                        {% if post.description %}<p class="post-card-desc">{{ post.description }}</p>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-photo-video"></i>
+                <p>لا توجد منشورات بعد</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Public: Info tab (journalist) -->
+        {% if user.account_type == 'journalist' %}
+        <div class="tab-panel" id="tab-pub-info">
+
+            <!-- ① المعلومات الأساسية -->
+            {% if user.gender or user.civil_status or user.location %}
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-id-card"></i> المعلومات الأساسية</h3>
+                <div class="pub-info-grid">
+                    {% if user.name or user.last_name %}
+                    <div class="pub-info-row">
+                        <span class="pub-info-label"><i class="fas fa-user"></i> الاسم الكامل</span>
+                        <span class="pub-info-val">{{ user.name }} {{ user.last_name or '' }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.location %}
+                    <div class="pub-info-row">
+                        <span class="pub-info-label"><i class="fas fa-map-marker-alt"></i> الموقع</span>
+                        <span class="pub-info-val">{{ user.location }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.gender %}
+                    <div class="pub-info-row">
+                        <span class="pub-info-label"><i class="fas fa-venus-mars"></i> الجنس</span>
+                        <span class="pub-info-val">{{ user.gender }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.civil_status %}
+                    <div class="pub-info-row">
+                        <span class="pub-info-label"><i class="fas fa-heart"></i> الحالة المدنية</span>
+                        <span class="pub-info-val">{{ user.civil_status }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ② الخبرة والمجال -->
+            {% if user.specialty or user.years_experience or user.skills or user.education or user.preferred_channels %}
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-briefcase"></i> الخبرة والمجال</h3>
+                <div class="pub-info-grid">
+                    {% if user.specialty %}
+                    <div class="pub-info-row">
+                        <span class="pub-info-label"><i class="fas fa-star"></i> التخصص</span>
+                        <span class="pub-info-val">{{ user.specialty }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.years_experience %}
+                    <div class="pub-info-row">
+                        <span class="pub-info-label"><i class="fas fa-clock"></i> سنوات الخبرة</span>
+                        <span class="pub-info-val">{{ user.years_experience }} سنوات</span>
+                    </div>
+                    {% endif %}
+                    {% if user.education %}
+                    <div class="pub-info-row" style="align-items:flex-start;">
+                        <span class="pub-info-label"><i class="fas fa-graduation-cap"></i> الشهادات</span>
+                        <span class="pub-info-val" style="white-space:pre-line">{{ user.education }}</span>
+                    </div>
+                    {% endif %}
+                    {% if user.skills %}
+                    <div class="pub-info-row" style="align-items:flex-start;">
+                        <span class="pub-info-label"><i class="fas fa-tools"></i> المهارات</span>
+                        <span class="pub-info-val">
+                            {% for skill in user.skills.split(',') %}
+                            <span class="skill-chip">{{ skill.strip() }}</span>
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% if user.preferred_channels %}
+                    <div class="pub-info-row" style="align-items:flex-start;">
+                        <span class="pub-info-label"><i class="fas fa-tv"></i> القنوات المفضلة</span>
+                        <span class="pub-info-val">
+                            {% for ch in user.preferred_channels.split(',') %}
+                            <span class="channel-tag">{{ ch.strip() }}</span>
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ③ الملفات الإعلامية -->
+            {% if user.cv_filename or user.intro_video %}
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-folder-open"></i> الملفات الإعلامية</h3>
+                <div class="pub-files-row">
+                    {% if user.cv_filename %}
+                    <a href="{{ url_for('static', filename='uploads/' + user.cv_filename) }}" target="_blank" class="pub-file-btn">
+                        <i class="fas fa-file-alt"></i>
+                        <span>السيرة الذاتية (CV)</span>
+                        <i class="fas fa-download pub-file-dl"></i>
+                    </a>
+                    {% endif %}
+                    {% if user.intro_video %}
+                    <div class="pub-video-wrap">
+                        <div class="section-title-sm" style="margin-bottom:0.8rem;"><i class="fas fa-video"></i> فيديو تقديم الأخبار</div>
+                        <video controls preload="metadata"
+                               style="width:100%;border-radius:12px;max-height:320px;background:#000;display:block;">
+                            <source src="{{ url_for('static', filename='uploads/' + user.intro_video) }}" type="video/mp4">
+                            متصفحك لا يدعم الفيديو.
+                        </video>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ④ معرض الأعمال - روابط المقالات -->
+            {% if user.article_links %}
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-newspaper"></i> مقالات وتقارير منشورة</h3>
+                <div class="article-links-list">
+                    {% for link in user.article_links.split('\n') %}
+                        {% set link = link.strip() %}
+                        {% if link %}
+                        <a href="{{ link }}" target="_blank" rel="noopener" class="article-link-item">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span>{{ link | truncate(60) }}</span>
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ⑤ مهارات إضافية -->
+            {% if user.extra_skills %}
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-plus-circle"></i> مهارات وتخصصات إضافية</h3>
+                <p style="color:var(--text-muted);font-size:0.9rem;line-height:1.8;white-space:pre-line">{{ user.extra_skills }}</p>
+            </div>
+            {% endif %}
+
+            {% if not (user.gender or user.civil_status or user.specialty or user.skills or user.education or user.cv_filename or user.intro_video or user.article_links or user.extra_skills) %}
+            <div class="empty-state">
+                <i class="fas fa-user-circle"></i>
+                <p>لم يضف هذا المستخدم معلوماته بعد</p>
+            </div>
+            {% endif %}
+
         </div>
         {% endif %}
+
+        <!-- Public: Jobs tab (channel) -->
+        {% if user.account_type == 'channel' %}
+        <div class="tab-panel" id="tab-pub-jobs">
+            {% if jobs %}
+            <div class="profile-section">
+                <h3 class="section-title-sm"><i class="fas fa-briefcase"></i> الوظائف المتاحة</h3>
+                {% for job in jobs %}
+                <a href="/job/{{ job.id }}" class="job-mini">
+                    <div class="job-mini-icon">
+                        <i class="fas fa-{{ {'journalist':'newspaper','photographer':'camera','content':'play-circle','editor':'film','presenter':'microphone','reporter':'broadcast-tower'}.get(job.category,'briefcase') }}"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700;font-size:0.9rem">{{ job.title }}</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted)">{{ job.created_at[:10] }}</div>
+                    </div>
+                    <span class="badge badge-blue" style="margin-right:auto">
+                        {{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
         {% endif %}
-    </div>
-</div>
+
+        {% endif %}{# end is_owner #}
+
+    </div><!-- /profile-main -->
+</div><!-- /profile-layout -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── File label helpers (CV, intro video) ── */
+    [['cv-input','cv-name'], ['introv-input','introv-name']].forEach(([inputId, nameId]) => {
+        const el = document.getElementById(inputId);
+        if (el) el.addEventListener('change', function() {
+            const label = document.getElementById(nameId);
+            if (this.files[0]) { label.textContent = '✓ ' + this.files[0].name; label.style.display = 'block'; }
+        });
+    });
+
+    /* ── Avatar: instant preview + submit on file pick ── */
+    const avatarFileInput = document.getElementById('avatar-file-input');
+    if (avatarFileInput) {
+        avatarFileInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+            // Show local preview immediately
+            const url = URL.createObjectURL(file);
+            const avatarDiv = this.closest('.avatar-wrapper').querySelector('.big-avatar');
+            avatarDiv.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+            // Submit the form
+            document.getElementById('avatar-form').submit();
+        });
+    }
+
+    /* ── Tab switching ── */
+    function activateTab(tab) {
+        document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const panel = document.getElementById('tab-' + tab.dataset.tab);
+        if (panel) panel.classList.add('active');
+    }
+    document.querySelectorAll('.profile-tab').forEach(tab =>
+        tab.addEventListener('click', () => activateTab(tab))
+    );
+    window.switchTab = function(key) {
+        const tab = document.querySelector(`.profile-tab[data-tab="${key}"]`);
+        if (tab) activateTab(tab);
+    };
+
+    /* ── Post-type switcher ── */
+    document.querySelectorAll('.post-type-btn').forEach(btn =>
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.post-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.querySelectorAll('[id^="ptype-"]').forEach(el => el.style.display = 'none');
+            const t = document.getElementById('ptype-' + btn.dataset.ptype);
+            if (t) t.style.display = 'block';
+        })
+    );
+
+    /* ── Avatar label ── */
+    const avatarInput = document.getElementById('avatar-input');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function () {
+            const el = document.getElementById('avatar-name');
+            if (this.files[0]) { el.textContent = '✓ ' + this.files[0].name; el.style.display = 'block'; }
+        });
+    }
+
+    /* ── Media preview ── */
+    const mediaInput = document.getElementById('media-input');
+    if (mediaInput) {
+        mediaInput.addEventListener('change', function () {
+            const nameEl  = document.getElementById('media-name');
+            const preview = document.getElementById('media-preview');
+            const file    = this.files[0];
+            if (!file) return;
+            nameEl.textContent = '✓ ' + file.name; nameEl.style.display = 'block';
+            preview.innerHTML = ''; preview.style.display = 'block';
+            const url = URL.createObjectURL(file);
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = url;
+                img.style.cssText = 'max-width:100%;border-radius:10px;max-height:280px;object-fit:contain;';
+                preview.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+                const vid = document.createElement('video');
+                vid.src = url; vid.controls = true;
+                vid.style.cssText = 'max-width:100%;border-radius:10px;max-height:280px;';
+                preview.appendChild(vid);
+            }
+        });
+    }
+
+    /* ── Drag-over ── */
+    document.querySelectorAll('.upload-zone').forEach(zone => {
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop',      () => zone.classList.remove('dragover'));
+    });
+
+    /* ── Lightbox ── */
+    const lightbox      = document.getElementById('lightbox');
+    const lightboxMedia = document.getElementById('lightbox-media');
+    const lightboxTitle = document.getElementById('lightbox-title');
+    const lightboxDesc  = document.getElementById('lightbox-desc');
+
+    document.querySelectorAll('.media-grid-item').forEach(item => {
+        item.addEventListener('click', function () {
+            const src   = this.dataset.src;
+            const type  = this.dataset.type;
+            lightboxMedia.innerHTML = '';
+            if (type === 'image') {
+                const img = document.createElement('img');
+                img.src = src; img.alt = this.dataset.title || '';
+                lightboxMedia.appendChild(img);
+            } else if (type === 'video') {
+                const vid = document.createElement('video');
+                vid.controls = true; vid.autoplay = true;
+                const s = document.createElement('source');
+                s.src = src; s.type = 'video/mp4';
+                vid.appendChild(s);
+                lightboxMedia.appendChild(vid);
+            }
+            lightboxTitle.textContent = this.dataset.title || '';
+            lightboxDesc.textContent  = this.dataset.desc  || '';
+            lightbox.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        });
+    });
+
+    function closeLightbox() {
+        lightbox.classList.remove('open');
+        lightboxMedia.innerHTML = '';
+        document.body.style.overflow = '';
+    }
+    document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+});
+</script>
 {% endblock %}
