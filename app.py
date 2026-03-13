@@ -123,6 +123,8 @@ migrate_db()
 
 @app.route('/')
 def index():
+    if 'user_id' in session:
+        return redirect(url_for('profile', user_id=session['user_id']))
     conn = get_db()
     jobs = conn.execute('''
         SELECT jobs.*, users.name as channel_name, users.location as channel_location
@@ -136,6 +138,8 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if 'user_id' in session:
+        return redirect(url_for('profile', user_id=session['user_id']))
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
@@ -161,7 +165,7 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
-        return redirect(url_for('profile', user_id=session['user_id']))
+        return redirect(url_for('index'))
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
