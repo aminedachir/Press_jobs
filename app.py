@@ -260,14 +260,42 @@ def post_job():
 def profile(user_id):
     conn = get_db()
     user = conn.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone()
-    jobs = None
-    posts = None
-    if user and user['account_type'] == 'channel':
-        jobs = conn.execute('SELECT * FROM jobs WHERE channel_id=? ORDER BY created_at DESC', (user_id,)).fetchall()
-    if user:
-        posts = conn.execute('SELECT * FROM posts WHERE user_id=? ORDER BY created_at DESC', (user_id,)).fetchall()
+    if not user:
+        conn.close()
+        flash('المستخدم غير موجود', 'error')
+        return redirect(url_for('index'))
+
+    # ── CHANNEL → dedicated channel profile page ──
+    if user['account_type'] == 'channel':
+        jobs = conn.execute(
+            'SELECT * FROM jobs WHERE channel_id=? ORDER BY created_at DESC', (user_id,)
+        ).fetchall()
+        total_applications = conn.execute('''
+            SELECT COUNT(*) FROM applications
+            JOIN jobs ON applications.job_id = jobs.id
+            WHERE jobs.channel_id = ?
+        ''', (user_id,)).fetchone()[0]
+        accepted_count = conn.execute('''
+            SELECT COUNT(*) FROM applications
+            JOIN jobs ON applications.job_id = jobs.id
+            WHERE jobs.channel_id = ? AND applications.status = 'accepted'
+        ''', (user_id,)).fetchone()[0]
+        conn.close()
+        job_categories = list({job['category'] for job in jobs})
+        return render_template('channel_profile.html',
+            channel=user,
+            jobs=jobs,
+            total_applications=total_applications,
+            accepted_count=accepted_count,
+            job_categories=job_categories
+        )
+
+    # ── JOURNALIST → existing profile page ──
+    posts = conn.execute(
+        'SELECT * FROM posts WHERE user_id=? ORDER BY created_at DESC', (user_id,)
+    ).fetchall()
     conn.close()
-    return render_template('profile.html', user=user, jobs=jobs, posts=posts)
+    return render_template('profile.html', user=user, jobs=None, posts=posts)
 
 @app.route('/profile/<int:user_id>/update', methods=['POST'])
 def update_profile(user_id):
@@ -444,4 +472,4 @@ def update_application(app_id, status):
     return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)

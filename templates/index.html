@@ -2,7 +2,6 @@
 {% block title %}PressJobs - وصل موهبتك بفرصتك{% endblock %}
 {% block extra_css %}
 <style>
-/* HERO */
 .hero {
     min-height: 92vh;
     display: flex; align-items: center;
@@ -60,7 +59,6 @@
     white-space: nowrap;
 }
 
-/* positioned around a circle */
 .job-card-mini:nth-child(1) { top: 0%;   right: 70%;  animation-delay: 0s;   }
 .job-card-mini:nth-child(2) { top: 15%;  right: 125%;  animation-delay: 0.4s; }
 .job-card-mini:nth-child(3) { top: 85%;  right: 57%;  animation-delay: 0.8s; }
@@ -80,7 +78,7 @@
 .job-info h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
 .job-info span { font-size: 0.8rem; color: var(--text-muted); }
 
-/* JOB CARD */
+
 .job-card { padding: 1.5rem; cursor: pointer; text-decoration: none; color: inherit; display: block; }
 .job-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .channel-icon { width: 52px; height: 52px; border-radius: 12px; background: var(--gradient-blue); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0; }
@@ -89,12 +87,12 @@
 .job-excerpt { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .job-footer { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
 
-/* HOW IT WORKS */
+
 .step { text-align: center; padding: 2rem; }
 .step-num { width: 64px; height: 64px; border-radius: 50%; background: var(--gradient-orange); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; margin: 0 auto 1.2rem; box-shadow: 0 8px 30px rgba(244,117,32,0.3); }
 .step h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
 .step p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.7; }
-/* CTA */
+
 .cta-section {
     margin: 4rem 2rem;
     background: linear-gradient(135deg, rgba(26,58,143,0.4), rgba(244,117,32,0.2));
@@ -117,13 +115,13 @@
 </style>
 {% endblock %}
 {% block content %}
-<!-- HERO -->
+
 <section class="hero">
     <div class="hero-grid">
         <div class="hero-content">
             <div class="hero-eyebrow"><i class="fas fa-broadcast-tower"></i> المنصة الإعلامية الأولى</div>
             <h1>وصّل <span>موهبتك</span><br>بفرصتك الإعلامية</h1>
-            <p>صحفي بلس منصة رقمية متخصصة تهدف إلى توظيف وربط طلبة علوم الإعلام والاتصال، الصحفيين، والمصورين، بالمؤسسات الإعلامية من قنوات تلفزيونية ومواقع إلكترونية وصحف رقمية، عبر نظام إلكتروني متكامل يجمع بين عرض الفرص المهنية وبناء الهوية الإعلامية الرقمية.</p>
+            <p>  منصة رقمية متخصصة تهدف إلى توظيف وربط طلبة علوم الإعلام والاتصال، الصحفيين، والمصورين، بالمؤسسات الإعلامية من قنوات تلفزيونية ومواقع إلكترونية وصحف رقمية، عبر نظام إلكتروني متكامل يجمع بين عرض الفرص المهنية وبناء الهوية الإعلامية الرقمية.</p>
             <div class="hero-btns">
                 <a href="/register" class="btn btn-primary"><i class="fas fa-rocket"></i> ابدأ الآن مجاناً</a>
                 <a href="/jobs" class="btn btn-outline"><i class="fas fa-search"></i> استعرض الوظائف</a>
@@ -167,7 +165,6 @@
     </div>
 </section>
 
-<!-- SEARCH -->
 <div class="search-bar-section">
     <section class="section">
     <div style="max-width:1200px;margin:0 auto">
@@ -211,14 +208,6 @@
 </section>
 </div>
 
-
-
-<!-- LATEST JOBS -->
-
-
-
-
-<!-- HOW IT WORKS -->
 <section class="section">
     <div style="max-width:1100px;margin:0 auto;text-align:center">
         <h2 class="section-title">كيف يعمل PressJobs؟</h2>
@@ -243,7 +232,6 @@
     </div>
 </section>
 
-<!-- CTA -->
 <div style="max-width:1200px;margin:0 auto;padding:0 2rem 4rem">
     <div class="cta-section">
         <h2>هل أنت قناة إعلامية أو موقع إخباري؟</h2>
