@@ -568,5 +568,218 @@ def update_application(app_id, status):
     flash('تم تحديث حالة الطلب', 'success')
     return redirect(url_for('profile', user_id=session['user_id']))
 
+
+# ── Admin helpers ────────────────────────────────────────────────────────────
+
+def migrate_admin():
+    """Add is_admin column to users if missing, then ensure one admin exists."""
+    conn = get_db()
+    c = conn.cursor()
+    cols = [row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()]
+    if 'is_admin' not in cols:
+        c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
+        conn.commit()
+    conn.close()
+
+migrate_admin()
+
+ADMIN_EMAIL    = os.environ.get('ADMIN_EMAIL', 'admin@pressjobs.dz')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@2024!')
+
+def ensure_admin():
+    """Create the built-in admin account if it does not exist yet."""
+    conn = get_db()
+    exists = conn.execute('SELECT id FROM users WHERE email=?', (ADMIN_EMAIL,)).fetchone()
+    if not exists:
+        conn.execute(
+            '''INSERT INTO users (name, email, password, account_type, is_admin)
+               VALUES (?,?,?,?,1)''',
+            ('مدير النظام', ADMIN_EMAIL, generate_password_hash(ADMIN_PASSWORD), 'admin')
+        )
+        conn.commit()
+    else:
+        # Make sure the account is flagged as admin
+        conn.execute('UPDATE users SET is_admin=1 WHERE email=?', (ADMIN_EMAIL,))
+        conn.commit()
+    conn.close()
+
+ensure_admin()
+
+def admin_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session or not session.get('is_admin'):
+            flash('غير مصرح لك بالدخول إلى لوحة التحكم', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+# ── Admin login (separate from regular login) ────────────────────────────────
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if session.get('is_admin'):
+        return redirect(url_for('admin_dashboard'))
+    if request.method == 'POST':
+        email    = request.form['email']
+        password = request.form['password']
+        conn = get_db()
+        user = conn.execute('SELECT * FROM users WHERE email=? AND is_admin=1', (email,)).fetchone()
+        conn.close()
+        if user and check_password_hash(user['password'], password):
+            session['user_id']   = user['id']
+            session['user_name'] = user['name']
+            session['is_admin']  = True
+            flash('مرحباً بك في لوحة التحكم', 'success')
+            return redirect(url_for('admin_dashboard'))
+        flash('بيانات الدخول غير صحيحة أو ليس لديك صلاحية الوصول', 'error')
+    return render_template('admin_login.html')
+
+
+# ── Admin dashboard ──────────────────────────────────────────────────────────
+
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    conn = get_db()
+    total_journalists = conn.execute("SELECT COUNT(*) FROM users WHERE account_type='journalist'").fetchone()[0]
+    total_channels    = conn.execute("SELECT COUNT(*) FROM users WHERE account_type='channel'").fetchone()[0]
+    total_jobs        = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+    total_apps        = conn.execute("SELECT COUNT(*) FROM applications").fetchone()[0]
+
+    journalists = conn.execute(
+        "SELECT * FROM users WHERE account_type='journalist' ORDER BY created_at DESC"
+    ).fetchall()
+    channels = conn.execute(
+        "SELECT * FROM users WHERE account_type='channel' ORDER BY created_at DESC"
+    ).fetchall()
+
+    # job count per channel
+    job_counts = {}
+    for ch in channels:
+        job_counts[ch['id']] = conn.execute(
+            'SELECT COUNT(*) FROM jobs WHERE channel_id=?', (ch['id'],)
+        ).fetchone()[0]
+
+    # app count per journalist
+    app_counts = {}
+    for j in journalists:
+        app_counts[j['id']] = conn.execute(
+            'SELECT COUNT(*) FROM applications WHERE journalist_id=?', (j['id'],)
+        ).fetchone()[0]
+
+    recent_jobs = conn.execute(
+        '''SELECT jobs.*, users.name as channel_name
+           FROM jobs JOIN users ON jobs.channel_id = users.id
+           ORDER BY jobs.created_at DESC LIMIT 10'''
+    ).fetchall()
+
+    conn.close()
+    return render_template('admin_dashboard.html',
+        total_journalists=total_journalists,
+        total_channels=total_channels,
+        total_jobs=total_jobs,
+        total_apps=total_apps,
+        journalists=journalists,
+        channels=channels,
+        job_counts=job_counts,
+        app_counts=app_counts,
+        recent_jobs=recent_jobs,
+    )
+
+
+# ── Admin: delete journalist ─────────────────────────────────────────────────
+
+@app.route('/admin/delete/journalist/<int:user_id>', methods=['POST'])
+@admin_required
+def admin_delete_journalist(user_id):
+    conn = get_db()
+    user = conn.execute('SELECT * FROM users WHERE id=? AND account_type=?',
+                        (user_id, 'journalist')).fetchone()
+    if not user:
+        flash('الصحفي غير موجود', 'error')
+        conn.close()
+        return redirect(url_for('admin_dashboard'))
+
+    # Delete uploads
+    for field in ('profile_image', 'cv_filename', 'intro_video'):
+        fname = user[field] if field in user.keys() else None
+        if fname:
+            fpath = os.path.join(UPLOAD_FOLDER, fname)
+            if os.path.exists(fpath):
+                os.remove(fpath)
+
+    # Delete posts and their media
+    posts = conn.execute('SELECT media_filename FROM posts WHERE user_id=?', (user_id,)).fetchall()
+    for p in posts:
+        if p['media_filename']:
+            fpath = os.path.join(UPLOAD_FOLDER, p['media_filename'])
+            if os.path.exists(fpath):
+                os.remove(fpath)
+
+    conn.execute('DELETE FROM applications WHERE journalist_id=?', (user_id,))
+    conn.execute('DELETE FROM posts WHERE user_id=?', (user_id,))
+    conn.execute('DELETE FROM users WHERE id=?', (user_id,))
+    conn.commit()
+    conn.close()
+    flash(f'تم حذف حساب الصحفي "{user["name"]}" بنجاح', 'success')
+    return redirect(url_for('admin_dashboard') + '#journalists')
+
+
+# ── Admin: delete channel ────────────────────────────────────────────────────
+
+@app.route('/admin/delete/channel/<int:channel_id>', methods=['POST'])
+@admin_required
+def admin_delete_channel(channel_id):
+    conn = get_db()
+    channel = conn.execute('SELECT * FROM users WHERE id=? AND account_type=?',
+                           (channel_id, 'channel')).fetchone()
+    if not channel:
+        flash('القناة غير موجودة', 'error')
+        conn.close()
+        return redirect(url_for('admin_dashboard'))
+
+    # Delete profile image
+    if channel['profile_image']:
+        fpath = os.path.join(UPLOAD_FOLDER, channel['profile_image'])
+        if os.path.exists(fpath):
+            os.remove(fpath)
+
+    # Delete all jobs + their applications
+    jobs = conn.execute('SELECT id FROM jobs WHERE channel_id=?', (channel_id,)).fetchall()
+    for job in jobs:
+        conn.execute('DELETE FROM applications WHERE job_id=?', (job['id'],))
+    conn.execute('DELETE FROM jobs WHERE channel_id=?', (channel_id,))
+    conn.execute('DELETE FROM users WHERE id=?', (channel_id,))
+    conn.commit()
+    conn.close()
+    flash(f'تم حذف حساب القناة "{channel["name"]}" وجميع وظائفها بنجاح', 'success')
+    return redirect(url_for('admin_dashboard') + '#channels')
+
+
+# ── Admin: delete any job ────────────────────────────────────────────────────
+
+@app.route('/admin/delete/job/<int:job_id>', methods=['POST'])
+@admin_required
+def admin_delete_job(job_id):
+    conn = get_db()
+    conn.execute('DELETE FROM applications WHERE job_id=?', (job_id,))
+    conn.execute('DELETE FROM jobs WHERE id=?', (job_id,))
+    conn.commit()
+    conn.close()
+    flash('تم حذف الوظيفة بنجاح', 'success')
+    return redirect(url_for('admin_dashboard') + '#jobs')
+
+
+# ── Admin logout ─────────────────────────────────────────────────────────────
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.clear()
+    return redirect(url_for('admin_login'))
+
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم المدير - PressJobs</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --blue: #1a3a8f;
+            --blue-mid: #2255cc;
+            --orange: #f47520;
+            --orange-dark: #d4600e;
+            --red: #e53e3e;
+            --red-dark: #c53030;
+            --green: #38a169;
+            --dark: #0d1117;
+            --dark2: #161b22;
+            --dark3: #1c2333;
+            --border: rgba(255,255,255,0.08);
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --card-bg: rgba(22,27,34,0.95);
+            --sidebar-w: 260px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Cairo', 'Tajawal', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            direction: rtl;
+            overflow-x: hidden;
+        }
+
+        /* ── SIDEBAR ─────────────────────────────────── */
+        .sidebar {
+            position: fixed;
+            top: 0; right: 0;
+            width: var(--sidebar-w);
+            height: 100vh;
+            background: var(--dark2);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+        }
+        .sidebar-brand {
+            padding: 1.5rem 1.2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .sidebar-brand .brand-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, #f47520, #d4600e);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; color: white; flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(244,117,32,0.35);
+        }
+        .sidebar-brand .brand-text { line-height: 1.2; }
+        .sidebar-brand .brand-name { font-size: 1rem; font-weight: 900; color: var(--text); }
+        .sidebar-brand .brand-sub  { font-size: 0.72rem; color: var(--text-muted); }
+
+        .sidebar-nav { padding: 1rem 0; flex: 1; }
+        .nav-section-label {
+            padding: 0.3rem 1.2rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 0.5rem;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.7rem 1.2rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            border-right: 3px solid transparent;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            color: var(--text);
+            background: rgba(255,255,255,0.05);
+            border-right-color: var(--orange);
+        }
+        .sidebar-link .icon {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem;
+            background: rgba(255,255,255,0.05);
+            flex-shrink: 0;
+        }
+        .sidebar-link.active .icon { background: rgba(244,117,32,0.15); color: var(--orange); }
+        .sidebar-link .badge-count {
+            margin-right: auto;
+            background: rgba(244,117,32,0.2);
+            color: var(--orange);
+            border-radius: 20px;
+            padding: 0.1rem 0.5rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .sidebar-footer {
+            padding: 1rem 1.2rem;
+            border-top: 1px solid var(--border);
+        }
+        .admin-user-info {
+            display: flex; align-items: center; gap: 0.7rem;
+            padding: 0.7rem;
+            background: rgba(255,255,255,0.04);
+            border-radius: 10px;
+            margin-bottom: 0.7rem;
+        }
+        .admin-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1a3a8f, #2255cc);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem; color: white; flex-shrink: 0;
+        }
+        .admin-user-info .name  { font-size: 0.82rem; font-weight: 700; }
+        .admin-user-info .role  { font-size: 0.7rem; color: var(--orange); }
+        .btn-logout {
+            width: 100%;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            padding: 0.6rem;
+            background: rgba(229,62,62,0.1);
+            border: 1px solid rgba(229,62,62,0.2);
+            border-radius: 10px;
+            color: #fc8181;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { background: rgba(229,62,62,0.2); }
+
+        /* ── MAIN CONTENT ─────────────────────────────── */
+        .main-content {
+            margin-right: var(--sidebar-w);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        /* ── TOP BAR ─────────────────────────────────── */
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .top-bar h1 { font-size: 1.5rem; font-weight: 900; }
+        .top-bar .subtitle { color: var(--text-muted); font-size: 0.88rem; margin-top: 0.2rem; }
+        .top-bar .timestamp {
+            font-size: 0.82rem; color: var(--text-muted);
+            background: rgba(255,255,255,0.05);
+            padding: 0.4rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        /* ── STATS GRID ──────────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.4rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+        }
+        .stat-card.blue::before  { background: linear-gradient(90deg, #1a3a8f, #2255cc); }
+        .stat-card.orange::before{ background: linear-gradient(90deg, #f47520, #d4600e); }
+        .stat-card.green::before { background: linear-gradient(90deg, #38a169, #276749); }
+        .stat-card.red::before   { background: linear-gradient(90deg, #e53e3e, #c53030); }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
+
+        .stat-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        .stat-card.blue  .stat-icon { background: rgba(34,85,204,0.15);  color: #6fa0ff; }
+        .stat-card.orange .stat-icon{ background: rgba(244,117,32,0.15); color: #ffaa5c; }
+        .stat-card.green .stat-icon { background: rgba(56,161,105,0.15); color: #68d391; }
+        .stat-card.red   .stat-icon { background: rgba(229,62,62,0.15);  color: #fc8181; }
+
+        .stat-value { font-size: 2rem; font-weight: 900; line-height: 1; }
+        .stat-label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.3rem; }
+
+        /* ── SECTION PANELS ──────────────────────────── */
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.02);
+        }
+        .panel-title {
+            display: flex; align-items: center; gap: 0.7rem;
+            font-size: 1rem; font-weight: 800;
+        }
+        .panel-title .p-icon {
+            width: 34px; height: 34px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem;
+        }
+        .panel-title .p-icon.orange { background: rgba(244,117,32,0.15); color: var(--orange); }
+        .panel-title .p-icon.blue   { background: rgba(34,85,204,0.15);  color: #6fa0ff; }
+        .panel-title .p-icon.green  { background: rgba(56,161,105,0.15); color: #68d391; }
+
+        .panel-count {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.2rem 0.7rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        /* ── TABLE ───────────────────────────────────── */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            padding: 0.8rem 1.2rem;
+            text-align: right;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255,255,255,0.02);
+        }
+        .data-table td {
+            padding: 0.9rem 1.2rem;
+            font-size: 0.87rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            vertical-align: middle;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+        .user-cell {
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .user-avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: rgba(255,255,255,0.08);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-name  { font-weight: 700; font-size: 0.88rem; }
+        .user-email { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+        /* badges */
+        .badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .badge-orange { background: rgba(244,117,32,0.18); color: #ffaa5c; border: 1px solid rgba(244,117,32,0.3); }
+        .badge-blue   { background: rgba(34,85,204,0.18);  color: #6fa0ff; border: 1px solid rgba(34,85,204,0.3); }
+        .badge-green  { background: rgba(56,161,105,0.18); color: #68d391; border: 1px solid rgba(56,161,105,0.3); }
+        .badge-gray   { background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid var(--border); }
+
+        /* action buttons */
+        .btn-view {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-decoration: none;
+            background: rgba(34,85,204,0.12);
+            color: #6fa0ff;
+            border: 1px solid rgba(34,85,204,0.2);
+            transition: all 0.2s;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-view:hover { background: rgba(34,85,204,0.2); }
+
+        .btn-delete {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.35rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            background: rgba(229,62,62,0.12);
+            color: #fc8181;
+            border: 1px solid rgba(229,62,62,0.2);
+            transition: all 0.2s;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .btn-delete:hover { background: rgba(229,62,62,0.25); }
+
+        /* ── FLASH ───────────────────────────────────── */
+        .flash-container {
+            position: fixed; top: 1rem; left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999; width: 90%; max-width: 460px;
+        }
+        .flash {
+            padding: 0.9rem 1.3rem;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            display: flex; align-items: center; gap: 0.7rem;
+            animation: slideDown 0.3s ease;
+            font-size: 0.9rem;
+        }
+        .flash.success { background: rgba(56,161,105,0.15); border: 1px solid rgba(56,161,105,0.4); color: #68d391; }
+        .flash.error   { background: rgba(229,62,62,0.15);  border: 1px solid rgba(229,62,62,0.4);  color: #fc8181; }
+        .flash.warning { background: rgba(237,137,54,0.15); border: 1px solid rgba(237,137,54,0.4); color: #f6ad55; }
+        @keyframes slideDown { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: translateY(0); } }
+
+        /* ── SEARCH BAR ──────────────────────────────── */
+        .search-bar {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+        .search-bar:focus-within { border-color: var(--orange); background: rgba(244,117,32,0.04); }
+        .search-bar input {
+            background: none; border: none; outline: none;
+            color: var(--text); font-family: inherit; font-size: 0.85rem; width: 180px;
+        }
+        .search-bar i { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* ── CONFIRM MODAL ───────────────────────────── */
+        .modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.65);
+            z-index: 9000;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: var(--dark2);
+            border: 1px solid rgba(229,62,62,0.25);
+            border-radius: 18px;
+            padding: 2rem;
+            max-width: 400px; width: 90%;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            animation: popIn 0.25s ease;
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-danger-icon {
+            width: 60px; height: 60px;
+            background: rgba(229,62,62,0.15);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: #fc8181;
+            margin: 0 auto 1.2rem;
+        }
+        .modal-box h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .modal-box p  { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem; }
+        .modal-actions { display: flex; gap: 0.8rem; justify-content: center; }
+        .modal-cancel {
+            padding: 0.6rem 1.5rem;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--border);
+            color: var(--text); font-family: inherit; font-weight: 700;
+            font-size: 0.88rem; cursor: pointer; transition: all 0.2s;
+        }
+        .modal-cancel:hover { background: rgba(255,255,255,0.12); }
+        .modal-confirm {
+            padding: 0.6rem 1.5rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            border: none;
+            color: white; font-family: inherit; font-weight: 700;
+            font-size: 0.88rem; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(229,62,62,0.3);
+        }
+        .modal-confirm:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(229,62,62,0.4); }
+
+        /* ── EMPTY STATE ─────────────────────────────── */
+        .empty-state {
+            text-align: center; padding: 3rem 1rem; color: var(--text-muted);
+        }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.4; display: block; }
+
+        /* ── RESPONSIVE ──────────────────────────────── */
+        @media(max-width:900px) {
+            .stats-grid { grid-template-columns: repeat(2,1fr); }
+        }
+        @media(max-width:640px) {
+            .sidebar { display: none; }
+            .main-content { margin-right: 0; padding: 1rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── FLASH MESSAGES ───────────────────────────────────────── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-container">
+{% for category, message in messages %}
+<div class="flash {{ category }}">
+    <i class="fas fa-{% if category=='success' %}check-circle{% elif category=='error' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+    {{ message }}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<!-- ── CONFIRM MODAL ────────────────────────────────────────── -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-box">
+        <div class="modal-danger-icon"><i class="fas fa-trash-alt"></i></div>
+        <h3 id="modalTitle">تأكيد الحذف</h3>
+        <p id="modalBody">هل أنت متأكد من حذف هذا العنصر؟ لا يمكن التراجع عن هذه العملية.</p>
+        <div class="modal-actions">
+            <button class="modal-cancel" onclick="closeModal()">إلغاء</button>
+            <form id="deleteForm" method="POST" style="display:inline">
+                <button type="submit" class="modal-confirm">
+                    <i class="fas fa-trash-alt"></i> حذف نهائياً
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── SIDEBAR ──────────────────────────────────────────────── -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon"><i class="fas fa-shield-alt"></i></div>
+        <div class="brand-text">
+            <div class="brand-name">PressJobs</div>
+            <div class="brand-sub">لوحة تحكم المدير</div>
+        </div>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-section-label">الرئيسية</div>
+        <a href="#overview"    class="sidebar-link active" onclick="showSection('overview',this)">
+            <span class="icon"><i class="fas fa-th-large"></i></span> نظرة عامة
+        </a>
+
+        <div class="nav-section-label">إدارة الحسابات</div>
+        <a href="#journalists" class="sidebar-link" onclick="showSection('journalists',this)">
+            <span class="icon"><i class="fas fa-user-tie"></i></span> الصحفيون
+            <span class="badge-count">{{ journalists|length }}</span>
+        </a>
+        <a href="#channels"    class="sidebar-link" onclick="showSection('channels',this)">
+            <span class="icon"><i class="fas fa-tv"></i></span> القنوات
+            <span class="badge-count">{{ channels|length }}</span>
+        </a>
+
+        <div class="nav-section-label">المحتوى</div>
+        <a href="#jobs"        class="sidebar-link" onclick="showSection('jobs',this)">
+            <span class="icon"><i class="fas fa-briefcase"></i></span> الوظائف
+            <span class="badge-count">{{ total_jobs }}</span>
+        </a>
+
+        <div class="nav-section-label">الموقع</div>
+        <a href="/" target="_blank" class="sidebar-link">
+            <span class="icon"><i class="fas fa-external-link-alt"></i></span> زيارة الموقع
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="admin-user-info">
+            <div class="admin-avatar"><i class="fas fa-user-shield"></i></div>
+            <div>
+                <div class="name">{{ session.user_name }}</div>
+                <div class="role">مدير النظام</div>
+            </div>
+        </div>
+        <a href="/admin/logout" class="btn-logout">
+            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+        </a>
+    </div>
+</aside>
+
+<!-- ── MAIN ─────────────────────────────────────────────────── -->
+<main class="main-content">
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+        <div>
+            <h1 id="pageTitle"><i class="fas fa-th-large" style="color:var(--orange)"></i> نظرة عامة</h1>
+            <div class="subtitle">إدارة المنصة والحسابات</div>
+        </div>
+        <div class="timestamp" id="liveClock"></div>
+    </div>
+
+    <!-- ── SECTION: OVERVIEW ─────────────────────────────────── -->
+    <div id="section-overview">
+        <div class="stats-grid">
+            <div class="stat-card blue" onclick="showSection('journalists',document.querySelector('[onclick*=journalists]'))">
+                <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
+                <div class="stat-value">{{ total_journalists }}</div>
+                <div class="stat-label">صحفي مسجّل</div>
+            </div>
+            <div class="stat-card orange" onclick="showSection('channels',document.querySelector('[onclick*=channels]'))">
+                <div class="stat-icon"><i class="fas fa-tv"></i></div>
+                <div class="stat-value">{{ total_channels }}</div>
+                <div class="stat-label">قناة مسجّلة</div>
+            </div>
+            <div class="stat-card green" onclick="showSection('jobs',document.querySelector('[onclick*=jobs]'))">
+                <div class="stat-icon"><i class="fas fa-briefcase"></i></div>
+                <div class="stat-value">{{ total_jobs }}</div>
+                <div class="stat-label">وظيفة منشورة</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-value">{{ total_apps }}</div>
+                <div class="stat-label">طلب توظيف</div>
+            </div>
+        </div>
+
+        <!-- Quick recent jobs -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="p-icon green"><i class="fas fa-clock"></i></span>
+                    آخر الوظائف المنشورة
+                </div>
+                <span class="panel-count">{{ recent_jobs|length }}</span>
+            </div>
+            {% if recent_jobs %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>الوظيفة</th>
+                        <th>القناة</th>
+                        <th>التصنيف</th>
+                        <th>التاريخ</th>
+                        <th>حذف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for job in recent_jobs %}
+                <tr>
+                    <td>
+                        <a href="/job/{{ job.id }}" target="_blank" style="color:var(--text);text-decoration:none;font-weight:700">
+                            {{ job.title }}
+                        </a>
+                    </td>
+                    <td><span class="badge badge-blue">{{ job.channel_name }}</span></td>
+                    <td><span class="badge badge-gray">{{ job.category }}</span></td>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ job.created_at[:10] }}</td>
+                    <td>
+                        <button class="btn-delete"
+                            onclick="confirmDelete('/admin/delete/job/{{ job.id }}','حذف وظيفة','هل تريد حذف وظيفة «{{ job.title }}»؟')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state"><i class="fas fa-briefcase"></i>لا توجد وظائف بعد</div>
+            {% endif %}
+        </div>
+    </div><!-- /overview -->
+
+    <!-- ── SECTION: JOURNALISTS ──────────────────────────────── -->
+    <div id="section-journalists" style="display:none">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="p-icon blue"><i class="fas fa-user-tie"></i></span>
+                    الصحفيون والكوادر الإعلامية
+                </div>
+                <div style="display:flex;align-items:center;gap:0.8rem">
+                    <span class="panel-count">{{ total_journalists }} حساب</span>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="journalistSearch" oninput="filterTable(this,'journalistTable')"
+                               placeholder="بحث...">
+                    </div>
+                </div>
+            </div>
+            {% if journalists %}
+            <table class="data-table" id="journalistTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الصحفي</th>
+                        <th>التخصص</th>
+                        <th>الموقع</th>
+                        <th>الطلبات</th>
+                        <th>تاريخ الإنضمام</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for j in journalists %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ j.id }}</td>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">
+                                {% if j.profile_image %}
+                                <img src="/static/uploads/{{ j.profile_image }}" alt="">
+                                {% else %}<i class="fas fa-user"></i>{% endif %}
+                            </div>
+                            <div>
+                                <div class="user-name">{{ j.name }} {% if j.last_name %}{{ j.last_name }}{% endif %}</div>
+                                <div class="user-email">{{ j.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if j.specialty %}
+                        <span class="badge badge-blue">{{ j.specialty }}</span>
+                        {% else %}<span style="color:var(--text-muted);font-size:0.8rem">—</span>{% endif %}
+                    </td>
+                    <td style="color:var(--text-muted);font-size:0.83rem">{{ j.location or '—' }}</td>
+                    <td>
+                        {% set cnt = app_counts.get(j.id, 0) %}
+                        <span class="badge {% if cnt > 0 %}badge-green{% else %}badge-gray{% endif %}">
+                            {{ cnt }} طلب
+                        </span>
+                    </td>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ j.created_at[:10] }}</td>
+                    <td>
+                        <div style="display:flex;gap:0.4rem">
+                            <a href="/profile/{{ j.id }}" target="_blank" class="btn-view">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn-delete"
+                                onclick="confirmDelete('/admin/delete/journalist/{{ j.id }}','حذف حساب صحفي','هل تريد حذف حساب «{{ j.name }}» نهائياً؟ سيتم حذف جميع بياناته وطلباته.')">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-user-slash"></i>
+                لا يوجد صحفيون مسجلون حتى الآن
+            </div>
+            {% endif %}
+        </div>
+    </div><!-- /journalists -->
+
+    <!-- ── SECTION: CHANNELS ─────────────────────────────────── -->
+    <div id="section-channels" style="display:none">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="p-icon orange"><i class="fas fa-tv"></i></span>
+                    القنوات والمؤسسات الإعلامية
+                </div>
+                <div style="display:flex;align-items:center;gap:0.8rem">
+                    <span class="panel-count">{{ total_channels }} قناة</span>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="channelSearch" oninput="filterTable(this,'channelTable')"
+                               placeholder="بحث...">
+                    </div>
+                </div>
+            </div>
+            {% if channels %}
+            <table class="data-table" id="channelTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>القناة</th>
+                        <th>الموقع</th>
+                        <th>الوظائف</th>
+                        <th>تاريخ الإنضمام</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for ch in channels %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ ch.id }}</td>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar">
+                                {% if ch.profile_image %}
+                                <img src="/static/uploads/{{ ch.profile_image }}" alt="">
+                                {% else %}<i class="fas fa-tv"></i>{% endif %}
+                            </div>
+                            <div>
+                                <div class="user-name">{{ ch.name }}</div>
+                                <div class="user-email">{{ ch.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="color:var(--text-muted);font-size:0.83rem">{{ ch.location or '—' }}</td>
+                    <td>
+                        {% set jcnt = job_counts.get(ch.id, 0) %}
+                        <span class="badge {% if jcnt > 0 %}badge-orange{% else %}badge-gray{% endif %}">
+                            {{ jcnt }} وظيفة
+                        </span>
+                    </td>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ ch.created_at[:10] }}</td>
+                    <td>
+                        <div style="display:flex;gap:0.4rem">
+                            <a href="/profile/{{ ch.id }}" target="_blank" class="btn-view">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn-delete"
+                                onclick="confirmDelete('/admin/delete/channel/{{ ch.id }}','حذف حساب قناة','هل تريد حذف قناة «{{ ch.name }}» نهائياً؟ سيتم حذف جميع وظائفها وبياناتها.')">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-tv"></i>
+                لا توجد قنوات مسجلة حتى الآن
+            </div>
+            {% endif %}
+        </div>
+    </div><!-- /channels -->
+
+    <!-- ── SECTION: JOBS ─────────────────────────────────────── -->
+    <div id="section-jobs" style="display:none">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <span class="p-icon green"><i class="fas fa-briefcase"></i></span>
+                    جميع الوظائف المنشورة
+                </div>
+                <div style="display:flex;align-items:center;gap:0.8rem">
+                    <span class="panel-count">{{ total_jobs }} وظيفة</span>
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="jobSearch" oninput="filterTable(this,'jobTable')"
+                               placeholder="بحث...">
+                    </div>
+                </div>
+            </div>
+            {% if recent_jobs %}
+            <table class="data-table" id="jobTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الوظيفة</th>
+                        <th>القناة</th>
+                        <th>التصنيف</th>
+                        <th>النوع</th>
+                        <th>التاريخ</th>
+                        <th>حذف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for job in recent_jobs %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ job.id }}</td>
+                    <td>
+                        <a href="/job/{{ job.id }}" target="_blank"
+                           style="color:var(--text);text-decoration:none;font-weight:700">
+                            {{ job.title }}
+                        </a>
+                    </td>
+                    <td><span class="badge badge-blue">{{ job.channel_name }}</span></td>
+                    <td><span class="badge badge-orange">{{ job.category }}</span></td>
+                    <td>
+                        {% if job.job_type %}
+                        <span class="badge badge-green">{{ job.job_type }}</span>
+                        {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
+                    </td>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ job.created_at[:10] }}</td>
+                    <td>
+                        <button class="btn-delete"
+                            onclick="confirmDelete('/admin/delete/job/{{ job.id }}','حذف وظيفة','هل تريد حذف وظيفة «{{ job.title }}»؟')">
+                            <i class="fas fa-trash"></i> حذف
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-briefcase"></i>
+                لا توجد وظائف منشورة حتى الآن
+            </div>
+            {% endif %}
+        </div>
+    </div><!-- /jobs -->
+
+</main>
+
+<script>
+// ── Section switching ─────────────────────────────────────────
+const sections   = ['overview','journalists','channels','jobs'];
+const sectionTitles = {
+    overview:    '<i class="fas fa-th-large" style="color:var(--orange)"></i> نظرة عامة',
+    journalists: '<i class="fas fa-user-tie" style="color:var(--orange)"></i> إدارة الصحفيين',
+    channels:    '<i class="fas fa-tv" style="color:var(--orange)"></i> إدارة القنوات',
+    jobs:        '<i class="fas fa-briefcase" style="color:var(--orange)"></i> إدارة الوظائف',
+};
+
+function showSection(id, linkEl) {
+    sections.forEach(s => {
+        const el = document.getElementById('section-' + s);
+        if (el) el.style.display = s === id ? '' : 'none';
+    });
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    if (linkEl) linkEl.classList.add('active');
+    document.getElementById('pageTitle').innerHTML = sectionTitles[id] || id;
+}
+
+// Handle URL hash on load
+const hash = window.location.hash.replace('#','');
+if (sections.includes(hash)) {
+    const linkEl = document.querySelector(`[onclick*="${hash}"]`);
+    showSection(hash, linkEl);
+}
+
+// ── Live clock ────────────────────────────────────────────────
+function updateClock() {
+    const now = new Date();
+    const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric',
+                   hour:'2-digit', minute:'2-digit' };
+    document.getElementById('liveClock').textContent = now.toLocaleDateString('ar-DZ', opts);
+}
+updateClock();
+setInterval(updateClock, 60000);
+
+// ── Delete modal ──────────────────────────────────────────────
+function confirmDelete(url, title, body) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').textContent  = body;
+    document.getElementById('deleteForm').action      = url;
+    document.getElementById('deleteModal').classList.add('show');
+}
+function closeModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+}
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+// ── Table search filter ───────────────────────────────────────
+function filterTable(input, tableId) {
+    const q = input.value.toLowerCase();
+    const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
+    rows.forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+}
+
+// ── Auto-hide flash ───────────────────────────────────────────
+setTimeout(() => {
+    document.querySelectorAll('.flash').forEach(el => {
+        el.style.transition = 'opacity 0.5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+    });
+}, 4000);
+</script>
+</body>
+</html>

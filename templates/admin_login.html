@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}دخول المدير - PressJobs{% endblock %}
+
+{% block extra_css %}
+<style>
+.admin-login-wrap {
+    min-height: calc(100vh - 70px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem;
+    background: radial-gradient(ellipse at 60% 40%, rgba(26,58,143,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 30% 70%, rgba(244,117,32,0.1) 0%, transparent 50%),
+                var(--dark);
+}
+.admin-login-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(244,117,32,0.25);
+    border-radius: 20px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+}
+.admin-login-icon {
+    width: 64px; height: 64px;
+    background: var(--gradient-orange);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; color: white;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 8px 25px rgba(244,117,32,0.4);
+}
+.admin-login-card h1 {
+    text-align: center; font-size: 1.5rem; font-weight: 900;
+    margin-bottom: 0.3rem;
+}
+.admin-login-card p {
+    text-align: center; color: var(--text-muted); font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+.admin-badge {
+    display: inline-block;
+    background: rgba(244,117,32,0.15);
+    border: 1px solid rgba(244,117,32,0.3);
+    color: var(--orange);
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-login-wrap">
+    <div class="admin-login-card">
+        <div class="admin-login-icon"><i class="fas fa-shield-alt"></i></div>
+        <div style="text-align:center">
+            <span class="admin-badge"><i class="fas fa-lock"></i> وصول مقيّد</span>
+        </div>
+        <h1>لوحة تحكم المدير</h1>
+        <p>أدخل بيانات حساب المدير للمتابعة</p>
+        <form method="POST" action="/admin/login">
+            <div class="form-group">
+                <label><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                <input type="email" name="email" required placeholder="admin@pressjobs.dz">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-key"></i> كلمة المرور</label>
+                <input type="password" name="password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.5rem">
+                <i class="fas fa-sign-in-alt"></i> دخول
+            </button>
+        </form>
+        <div style="text-align:center;margin-top:1.5rem">
+            <a href="/" style="color:var(--text-muted);font-size:0.85rem;text-decoration:none">
+                <i class="fas fa-arrow-right"></i> العودة إلى الموقع
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
