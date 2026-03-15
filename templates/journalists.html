@@ -45,6 +45,14 @@
 .jc-skills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .skill-dot { background: rgba(255,255,255,0.06); border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; color: var(--text-muted); }
 
+/* Role label badges */
+.role-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.7rem; border-radius: 20px; font-size: 0.73rem; font-weight: 700; }
+.role-journalism  { background: rgba(244,117,32,0.12); color: #f47520; border: 1px solid rgba(244,117,32,0.3); }
+.role-photo       { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+.role-editing     { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.role-content     { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+.role-other       { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border); }
+
 /* Empty state */
 .empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
 .empty-state i { font-size: 4rem; opacity: 0.12; display: block; margin-bottom: 1rem; }
@@ -101,7 +109,17 @@
                 {% if j.location %}<div class="jc-location"><i class="fas fa-map-marker-alt"></i> {{ j.location }}</div>{% endif %}
                 {% if j.specialty %}
                 <div class="jc-specialty">
-                    <span class="badge badge-orange" style="font-size:0.72rem">{{ j.specialty }}</span>
+                    {% if j.specialty == 'صحافة' %}
+                    <span class="role-badge role-journalism"><i class="fas fa-newspaper"></i> صحافة</span>
+                    {% elif j.specialty == 'تصوير' %}
+                    <span class="role-badge role-photo"><i class="fas fa-camera"></i> تصوير</span>
+                    {% elif j.specialty == 'مونتاج' %}
+                    <span class="role-badge role-editing"><i class="fas fa-film"></i> مونتاج</span>
+                    {% elif j.specialty == 'صناعة محتوى' %}
+                    <span class="role-badge role-content"><i class="fas fa-play-circle"></i> صناعة محتوى</span>
+                    {% else %}
+                    <span class="role-badge role-other"><i class="fas fa-tag"></i> {{ j.specialty }}</span>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>

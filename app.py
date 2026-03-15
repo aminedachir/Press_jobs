@@ -14,8 +14,6 @@ UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def convert_to_mp4(src_path):
-    """Convert any video to H.264 MP4 for universal browser support.
-    Returns the new filename (without folder), or original name if conversion fails."""
     base = os.path.splitext(src_path)[0]
     out_path = base + '_c.mp4'
     try:
@@ -27,11 +25,11 @@ def convert_to_mp4(src_path):
             out_path
         ], capture_output=True, timeout=300)
         if result.returncode == 0 and os.path.exists(out_path):
-            os.remove(src_path)          # delete original
+            os.remove(src_path)
             return out_path
     except Exception:
         pass
-    return src_path                      # fallback: keep original
+    return src_path
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -93,7 +91,6 @@ def init_db():
 
 init_db()
 
-# ── Migrate: add new journalist profile columns if they don't exist ──
 def migrate_db():
     conn = get_db()
     c = conn.cursor()
@@ -109,6 +106,7 @@ def migrate_db():
         ("cv_filename",        "TEXT"),
         ("intro_video",        "TEXT"),
         ("article_links",      "TEXT"),
+        ("channel_type",       "TEXT"),   # NEW: قناة اعلامية / موقع اخباري / جريدة الكترونية
     ]
     for col, coltype in new_cols:
         if col not in existing:
@@ -141,19 +139,20 @@ def register():
     if 'user_id' in session:
         return redirect(url_for('profile', user_id=session['user_id']))
     if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = generate_password_hash(request.form['password'])
+        name         = request.form['name']
+        email        = request.form['email']
+        password     = generate_password_hash(request.form['password'])
         account_type = request.form['account_type']
-        location = request.form.get('location', '')
-        bio = request.form.get('bio', '')
-        skills = request.form.get('skills', '')
-        education = request.form.get('education', '')
+        location     = request.form.get('location', '')
+        bio          = request.form.get('bio', '')
+        skills       = request.form.get('skills', '')
+        education    = request.form.get('education', '')
+        channel_type = request.form.get('channel_type', '')   # NEW
         try:
             conn = get_db()
-            conn.execute('''INSERT INTO users (name, email, password, account_type, location, bio, skills, education)
-                           VALUES (?,?,?,?,?,?,?,?)''',
-                        (name, email, password, account_type, location, bio, skills, education))
+            conn.execute('''INSERT INTO users (name, email, password, account_type, location, bio, skills, education, channel_type)
+                           VALUES (?,?,?,?,?,?,?,?,?)''',
+                        (name, email, password, account_type, location, bio, skills, education, channel_type))
             conn.commit()
             conn.close()
             flash('تم إنشاء حسابك بنجاح! يمكنك تسجيل الدخول الآن', 'success')
@@ -167,14 +166,14 @@ def login():
     if 'user_id' in session:
         return redirect(url_for('index'))
     if request.method == 'POST':
-        email = request.form['email']
+        email    = request.form['email']
         password = request.form['password']
         conn = get_db()
         user = conn.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
         conn.close()
         if user and check_password_hash(user['password'], password):
-            session['user_id'] = user['id']
-            session['user_name'] = user['name']
+            session['user_id']    = user['id']
+            session['user_name']  = user['name']
             session['account_type'] = user['account_type']
             flash(f'مرحباً {user["name"]}!', 'success')
             return redirect(url_for('profile', user_id=user['id']))
@@ -229,7 +228,7 @@ def delete_job(job_id):
 @app.route('/jobs')
 def jobs():
     category = request.args.get('category', '')
-    search = request.args.get('search', '')
+    search   = request.args.get('search', '')
     conn = get_db()
     query = '''SELECT jobs.*, users.name as channel_name FROM jobs
                JOIN users ON jobs.channel_id = users.id WHERE 1=1'''
@@ -334,14 +333,12 @@ def update_profile(user_id):
     if 'user_id' not in session or session['user_id'] != user_id:
         return redirect(url_for('login'))
 
-    # ── Basic info ──
     name              = request.form.get('name', '').strip()
     last_name         = request.form.get('last_name', '').strip()
     location          = request.form.get('location', '').strip()
     bio               = request.form.get('bio', '').strip()
     gender            = request.form.get('gender', '').strip()
     civil_status      = request.form.get('civil_status', '').strip()
-    # ── Experience ──
     specialty         = request.form.get('specialty', '').strip()
     years_experience  = request.form.get('years_experience', '').strip()
     education         = request.form.get('education', '').strip()
@@ -365,7 +362,6 @@ def update_profile(user_id):
         uname = f"{prefix}_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
         full_path = os.path.join(UPLOAD_FOLDER, uname)
         f.save(full_path)
-        # Convert video to mp4 for browser compatibility
         if ext in ALL_VIDEO and ext != '.mp4':
             converted = convert_to_mp4(full_path)
             uname = os.path.basename(converted)
@@ -377,7 +373,6 @@ def update_profile(user_id):
     conn = get_db()
     old = conn.execute('SELECT cv_filename, intro_video FROM users WHERE id=?', (user_id,)).fetchone()
 
-    # Delete old files if replaced
     for field, new_val in [('cv_filename', cv_filename), ('intro_video', intro_video)]:
         if new_val and old and old[field]:
             old_path = os.path.join(UPLOAD_FOLDER, old[field])
@@ -442,10 +437,10 @@ def create_post(user_id):
     if 'user_id' not in session or session['user_id'] != user_id:
         return redirect(url_for('login'))
 
-    title = request.form.get('title', '').strip()
+    title       = request.form.get('title', '').strip()
     description = request.form.get('description', '').strip()
     media_filename = None
-    media_type = None
+    media_type     = None
 
     VIDEO_EXT = {'.mp4','.webm','.mov','.avi','.mkv','.flv','.wmv','.m4v','.3gp','.ogv','.ts','.mts','.m2ts'}
     IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif','.svg'}
@@ -453,21 +448,20 @@ def create_post(user_id):
     if 'media' in request.files:
         file = request.files['media']
         if file and file.filename:
-            filename = secure_filename(file.filename)
-            ext = os.path.splitext(filename)[1].lower()
+            filename    = secure_filename(file.filename)
+            ext         = os.path.splitext(filename)[1].lower()
             unique_name = f"post_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
-            file_path = os.path.join(UPLOAD_FOLDER, unique_name)
+            file_path   = os.path.join(UPLOAD_FOLDER, unique_name)
             file.save(file_path)
             if ext in VIDEO_EXT:
                 media_type = 'video'
-                # Convert to mp4 for universal browser support
-                converted = convert_to_mp4(file_path)
+                converted  = convert_to_mp4(file_path)
                 media_filename = os.path.basename(converted)
             elif ext in IMAGE_EXT:
-                media_type = 'image'
+                media_type     = 'image'
                 media_filename = unique_name
             else:
-                media_type = 'other'
+                media_type     = 'other'
                 media_filename = unique_name
 
     conn = get_db()
@@ -528,34 +522,43 @@ def upload_channel_picture(channel_id):
 @app.route('/channels')
 def channels():
     conn = get_db()
-    search = request.args.get('search', '')
-    query = "SELECT * FROM users WHERE account_type='channel'"
+    search       = request.args.get('search', '')
+    channel_type = request.args.get('type', '')   # NEW
+    query  = "SELECT * FROM users WHERE account_type='channel'"
     params = []
+    if channel_type:
+        query += ' AND channel_type=?'
+        params.append(channel_type)
     if search:
         query += ' AND (name LIKE ? OR location LIKE ? OR bio LIKE ?)'
         params += [f'%{search}%', f'%{search}%', f'%{search}%']
     query += ' ORDER BY created_at DESC'
     all_channels = conn.execute(query, params).fetchall()
-    # Get job count per channel
     job_counts = {}
     for ch in all_channels:
         count = conn.execute('SELECT COUNT(*) FROM jobs WHERE channel_id=?', (ch['id'],)).fetchone()[0]
         job_counts[ch['id']] = count
     conn.close()
-    return render_template('channels.html', channels=all_channels, job_counts=job_counts, search=search)
+    return render_template('channels.html', channels=all_channels, job_counts=job_counts,
+                           search=search, channel_type=channel_type)
 
 @app.route('/journalists')
 def journalists():
     conn = get_db()
     category = request.args.get('category', '')
-    query = "SELECT * FROM users WHERE account_type='journalist'"
+    search   = request.args.get('search', '')
+    query  = "SELECT * FROM users WHERE account_type='journalist'"
     params = []
     if category:
-        query += ' AND skills LIKE ?'
+        query += ' AND specialty LIKE ?'
         params.append(f'%{category}%')
+    if search:
+        query += ' AND (name LIKE ? OR skills LIKE ? OR location LIKE ?)'
+        params += [f'%{search}%', f'%{search}%', f'%{search}%']
+    query += ' ORDER BY created_at DESC'
     users = conn.execute(query, params).fetchall()
     conn.close()
-    return render_template('journalists.html', journalists=users, category=category)
+    return render_template('journalists.html', journalists=users, category=category, search=search)
 
 @app.route('/update-application/<int:app_id>/<status>')
 def update_application(app_id, status):
@@ -572,7 +575,6 @@ def update_application(app_id, status):
 # ── Admin helpers ────────────────────────────────────────────────────────────
 
 def migrate_admin():
-    """Add is_admin column to users if missing, then ensure one admin exists."""
     conn = get_db()
     c = conn.cursor()
     cols = [row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()]
@@ -587,7 +589,6 @@ ADMIN_EMAIL    = os.environ.get('ADMIN_EMAIL', 'admin@pressjobs.dz')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@2024!')
 
 def ensure_admin():
-    """Create the built-in admin account if it does not exist yet."""
     conn = get_db()
     exists = conn.execute('SELECT id FROM users WHERE email=?', (ADMIN_EMAIL,)).fetchone()
     if not exists:
@@ -598,7 +599,6 @@ def ensure_admin():
         )
         conn.commit()
     else:
-        # Make sure the account is flagged as admin
         conn.execute('UPDATE users SET is_admin=1 WHERE email=?', (ADMIN_EMAIL,))
         conn.commit()
     conn.close()
@@ -616,7 +616,7 @@ def admin_required(f):
     return decorated
 
 
-# ── Admin login (separate from regular login) ────────────────────────────────
+# ── Admin login ──────────────────────────────────────────────────────────────
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -656,14 +656,12 @@ def admin_dashboard():
         "SELECT * FROM users WHERE account_type='channel' ORDER BY created_at DESC"
     ).fetchall()
 
-    # job count per channel
     job_counts = {}
     for ch in channels:
         job_counts[ch['id']] = conn.execute(
             'SELECT COUNT(*) FROM jobs WHERE channel_id=?', (ch['id'],)
         ).fetchone()[0]
 
-    # app count per journalist
     app_counts = {}
     for j in journalists:
         app_counts[j['id']] = conn.execute(
@@ -703,7 +701,6 @@ def admin_delete_journalist(user_id):
         conn.close()
         return redirect(url_for('admin_dashboard'))
 
-    # Delete uploads
     for field in ('profile_image', 'cv_filename', 'intro_video'):
         fname = user[field] if field in user.keys() else None
         if fname:
@@ -711,7 +708,6 @@ def admin_delete_journalist(user_id):
             if os.path.exists(fpath):
                 os.remove(fpath)
 
-    # Delete posts and their media
     posts = conn.execute('SELECT media_filename FROM posts WHERE user_id=?', (user_id,)).fetchall()
     for p in posts:
         if p['media_filename']:
@@ -741,13 +737,11 @@ def admin_delete_channel(channel_id):
         conn.close()
         return redirect(url_for('admin_dashboard'))
 
-    # Delete profile image
     if channel['profile_image']:
         fpath = os.path.join(UPLOAD_FOLDER, channel['profile_image'])
         if os.path.exists(fpath):
             os.remove(fpath)
 
-    # Delete all jobs + their applications
     jobs = conn.execute('SELECT id FROM jobs WHERE channel_id=?', (channel_id,)).fetchall()
     for job in jobs:
         conn.execute('DELETE FROM applications WHERE job_id=?', (job['id'],))

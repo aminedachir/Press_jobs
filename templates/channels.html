@@ -6,6 +6,13 @@
 .page-header h1 { font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem; }
 .page-header p { color: var(--text-muted); }
 .channels-layout { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
+.filter-bar { background: var(--dark3); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; gap: 0.7rem; flex-wrap: wrap; align-items: center; }
+.filter-bar a { padding: 0.5rem 1rem; border-radius: 20px; border: 1.5px solid var(--border); color: var(--text-muted); text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.3s; white-space: nowrap; }
+.filter-bar a:hover, .filter-bar a.active { border-color: var(--orange); color: var(--orange); background: rgba(244,117,32,0.1); }
+.channel-type-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; margin-bottom: 0.5rem; }
+.badge-tv    { background: rgba(244,117,32,0.12); color: #f47520; border: 1px solid rgba(244,117,32,0.3); }
+.badge-web   { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+.badge-paper { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
 .search-bar { display: flex; gap: 0.7rem; margin-bottom: 2.5rem; }
 .search-bar input { flex: 1; padding: 0.85rem 1.1rem; background: rgba(255,255,255,0.05); border: 1.5px solid var(--border); border-radius: 12px; color: var(--text); font-family: inherit; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
 .search-bar input:focus { border-color: var(--orange); }
@@ -53,10 +60,20 @@
     </div>
 </div>
 
+<!-- FILTER TABS -->
+<div class="filter-bar">
+    <a href="/channels" {% if not channel_type %}class="active"{% endif %}><i class="fas fa-th"></i> الكل</a>
+    <a href="/channels?type=قناة اعلامية" {% if channel_type=='قناة اعلامية' %}class="active"{% endif %}><i class="fas fa-tv"></i> قنوات اعلامية</a>
+    <a href="/channels?type=موقع اخباري" {% if channel_type=='موقع اخباري' %}class="active"{% endif %}><i class="fas fa-globe"></i> مواقع اخبارية</a>
+    <a href="/channels?type=جريدة الكترونية" {% if channel_type=='جريدة الكترونية' %}class="active"{% endif %}><i class="fas fa-newspaper"></i> جرائد الكترونية</a>
+</div>
+
 <div class="channels-layout">
     <form class="search-bar" method="get">
+        {% if channel_type %}<input type="hidden" name="type" value="{{ channel_type }}">{% endif %}
         <input type="text" name="search" value="{{ search }}" placeholder="ابحث باسم القناة أو الموقع...">
         <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> بحث</button>
+        {% if search or channel_type %}<a href="/channels" class="btn btn-outline"><i class="fas fa-times"></i> مسح</a>{% endif %}
     </form>
 
     {% if channels %}
@@ -75,6 +92,17 @@
             </div>
             <div class="channel-card-body">
                 <div class="channel-name">{{ ch.name }}</div>
+                {% if ch.channel_type %}
+                <div style="margin-bottom:0.4rem">
+                    {% if ch.channel_type == 'قناة اعلامية' %}
+                    <span class="channel-type-badge badge-tv"><i class="fas fa-tv"></i> قناة اعلامية</span>
+                    {% elif ch.channel_type == 'موقع اخباري' %}
+                    <span class="channel-type-badge badge-web"><i class="fas fa-globe"></i> موقع اخباري</span>
+                    {% elif ch.channel_type == 'جريدة الكترونية' %}
+                    <span class="channel-type-badge badge-paper"><i class="fas fa-newspaper"></i> جريدة الكترونية</span>
+                    {% endif %}
+                </div>
+                {% endif %}
                 {% if ch.location %}
                 <div class="channel-location"><i class="fas fa-map-marker-alt"></i> {{ ch.location }}</div>
                 {% endif %}
