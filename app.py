@@ -192,6 +192,40 @@ def dashboard():
         return redirect(url_for('login'))
     return redirect(url_for('profile', user_id=session['user_id']))
 
+@app.route('/job/<int:job_id>/edit', methods=['POST'])
+def edit_job(job_id):
+    if 'user_id' not in session or session.get('account_type') != 'channel':
+        return redirect(url_for('login'))
+    conn = get_db()
+    job = conn.execute('SELECT * FROM jobs WHERE id=? AND channel_id=?', (job_id, session['user_id'])).fetchone()
+    if not job:
+        conn.close()
+        flash('غير مصرح لك بتعديل هذه الوظيفة', 'error')
+        return redirect(url_for('profile', user_id=session['user_id']))
+    conn.execute('''UPDATE jobs SET title=?, description=?, category=?, location=?, job_type=?, salary=?, requirements=?
+                    WHERE id=?''',
+                 (request.form['title'], request.form['description'], request.form['category'],
+                  request.form.get('location',''), request.form.get('job_type',''),
+                  request.form.get('salary',''), request.form.get('requirements',''), job_id))
+    conn.commit()
+    conn.close()
+    flash('تم تعديل الوظيفة بنجاح!', 'success')
+    return redirect(url_for('profile', user_id=session['user_id']))
+
+@app.route('/job/<int:job_id>/delete')
+def delete_job(job_id):
+    if 'user_id' not in session or session.get('account_type') != 'channel':
+        return redirect(url_for('login'))
+    conn = get_db()
+    job = conn.execute('SELECT * FROM jobs WHERE id=? AND channel_id=?', (job_id, session['user_id'])).fetchone()
+    if job:
+        conn.execute('DELETE FROM applications WHERE job_id=?', (job_id,))
+        conn.execute('DELETE FROM jobs WHERE id=?', (job_id,))
+        conn.commit()
+        flash('تم حذف الوظيفة نهائياً', 'success')
+    conn.close()
+    return redirect(url_for('profile', user_id=session['user_id']))
+
 @app.route('/jobs')
 def jobs():
     category = request.args.get('category', '')
@@ -265,32 +299,30 @@ def profile(user_id):
         flash('المستخدم غير موجود', 'error')
         return redirect(url_for('index'))
 
-    # ── CHANNEL → dedicated channel profile page ──
     if user['account_type'] == 'channel':
         jobs = conn.execute(
             'SELECT * FROM jobs WHERE channel_id=? ORDER BY created_at DESC', (user_id,)
         ).fetchall()
-        total_applications = conn.execute('''
-            SELECT COUNT(*) FROM applications
+        applications = conn.execute('''
+            SELECT applications.*, jobs.title AS job_title,
+                   u.name AS applicant_name, u.profile_image AS applicant_image,
+                   u.skills, u.education, u.location AS applicant_location,
+                   u.years_experience, u.specialty, u.cv_filename
+            FROM applications
             JOIN jobs ON applications.job_id = jobs.id
+            JOIN users u ON applications.journalist_id = u.id
             WHERE jobs.channel_id = ?
-        ''', (user_id,)).fetchone()[0]
-        accepted_count = conn.execute('''
-            SELECT COUNT(*) FROM applications
-            JOIN jobs ON applications.job_id = jobs.id
-            WHERE jobs.channel_id = ? AND applications.status = 'accepted'
-        ''', (user_id,)).fetchone()[0]
+            ORDER BY applications.created_at DESC
+        ''', (user_id,)).fetchall()
+        total_applications = len(applications)
+        accepted_count = sum(1 for a in applications if a['status'] == 'accepted')
+        job_categories = list({j['category'] for j in jobs})
         conn.close()
-        job_categories = list({job['category'] for job in jobs})
         return render_template('channel_profile.html',
-            channel=user,
-            jobs=jobs,
-            total_applications=total_applications,
-            accepted_count=accepted_count,
-            job_categories=job_categories
-        )
+            channel=user, jobs=jobs, applications=applications,
+            total_applications=total_applications, accepted_count=accepted_count,
+            job_categories=job_categories)
 
-    # ── JOURNALIST → existing profile page ──
     posts = conn.execute(
         'SELECT * FROM posts WHERE user_id=? ORDER BY created_at DESC', (user_id,)
     ).fetchall()
@@ -447,6 +479,71 @@ def create_post(user_id):
     flash('تم نشر المحتوى بنجاح!', 'success')
     return redirect(url_for('profile', user_id=user_id))
 
+@app.route('/channel/<int:channel_id>/update', methods=['POST'])
+def update_channel(channel_id):
+    if 'user_id' not in session or session['user_id'] != channel_id:
+        return redirect(url_for('login'))
+    name     = request.form.get('name', '').strip()
+    location = request.form.get('location', '').strip()
+    bio      = request.form.get('bio', '').strip()
+    conn = get_db()
+    conn.execute('UPDATE users SET name=?, location=?, bio=? WHERE id=?',
+                 (name, location, bio, channel_id))
+    conn.commit()
+    conn.close()
+    session['user_name'] = name
+    flash('تم تحديث معلومات القناة بنجاح!', 'success')
+    return redirect(url_for('profile', user_id=channel_id))
+
+@app.route('/channel/<int:channel_id>/upload-picture', methods=['POST'])
+def upload_channel_picture(channel_id):
+    if 'user_id' not in session or session['user_id'] != channel_id:
+        return redirect(url_for('login'))
+    if 'profile_image' not in request.files:
+        flash('لم يتم اختيار أي صورة', 'error')
+        return redirect(url_for('profile', user_id=channel_id))
+    file = request.files['profile_image']
+    if not file or not file.filename:
+        flash('لم يتم اختيار أي صورة', 'error')
+        return redirect(url_for('profile', user_id=channel_id))
+    IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif'}
+    ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+    if ext not in IMAGE_EXT:
+        flash('صيغة الصورة غير مدعومة', 'error')
+        return redirect(url_for('profile', user_id=channel_id))
+    conn = get_db()
+    old = conn.execute('SELECT profile_image FROM users WHERE id=?', (channel_id,)).fetchone()
+    if old and old['profile_image']:
+        old_path = os.path.join(UPLOAD_FOLDER, old['profile_image'])
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    unique_name = f"avatar_{channel_id}_{int(datetime.utcnow().timestamp())}{ext}"
+    file.save(os.path.join(UPLOAD_FOLDER, unique_name))
+    conn.execute('UPDATE users SET profile_image=? WHERE id=?', (unique_name, channel_id))
+    conn.commit()
+    conn.close()
+    flash('تم تحديث شعار القناة بنجاح!', 'success')
+    return redirect(url_for('profile', user_id=channel_id))
+
+@app.route('/channels')
+def channels():
+    conn = get_db()
+    search = request.args.get('search', '')
+    query = "SELECT * FROM users WHERE account_type='channel'"
+    params = []
+    if search:
+        query += ' AND (name LIKE ? OR location LIKE ? OR bio LIKE ?)'
+        params += [f'%{search}%', f'%{search}%', f'%{search}%']
+    query += ' ORDER BY created_at DESC'
+    all_channels = conn.execute(query, params).fetchall()
+    # Get job count per channel
+    job_counts = {}
+    for ch in all_channels:
+        count = conn.execute('SELECT COUNT(*) FROM jobs WHERE channel_id=?', (ch['id'],)).fetchone()[0]
+        job_counts[ch['id']] = count
+    conn.close()
+    return render_template('channels.html', channels=all_channels, job_counts=job_counts, search=search)
+
 @app.route('/journalists')
 def journalists():
     conn = get_db()
@@ -468,8 +565,8 @@ def update_application(app_id, status):
     conn.execute('UPDATE applications SET status=? WHERE id=?', (status, app_id))
     conn.commit()
     conn.close()
-    flash('تم تحديث الطلب', 'success')
-    return redirect(url_for('dashboard'))
+    flash('تم تحديث حالة الطلب', 'success')
+    return redirect(url_for('profile', user_id=session['user_id']))
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000, debug=True)

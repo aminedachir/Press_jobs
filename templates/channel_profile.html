@@ -2,308 +2,504 @@
 {% block title %}{{ channel.name }} - PressJobs{% endblock %}
 {% block extra_css %}
 <style>
-/* ── HERO ── */
-.ch-hero {
-    position: relative;
-    height: 280px;
-    background: linear-gradient(135deg, #0d1117 0%, #1a2240 60%, #0d1117 100%);
-    overflow: hidden;
-}
-.ch-hero-bg {
-    position: absolute; inset: 0;
-    background:
-        radial-gradient(ellipse 60% 80% at 20% 50%, rgba(34,85,204,0.18) 0%, transparent 70%),
-        radial-gradient(ellipse 50% 70% at 80% 30%, rgba(244,117,32,0.12) 0%, transparent 70%);
-}
-.ch-hero-pattern {
-    position: absolute; inset: 0; opacity: 0.04;
-    background-image: repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.5) 40px, rgba(255,255,255,0.5) 41px),
-                      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.5) 40px, rgba(255,255,255,0.5) 41px);
-}
-.ch-hero-content {
-    position: relative; z-index: 2;
-    max-width: 1200px; margin: 0 auto;
-    padding: 2.5rem 2rem 0;
-    display: flex; align-items: flex-end; gap: 2rem;
-    height: 100%;
-}
-.ch-logo-wrap {
-    width: 120px; height: 120px; border-radius: 24px;
-    border: 3px solid rgba(244,117,32,0.5);
-    background: var(--dark2);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; margin-bottom: -40px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-}
-.ch-logo-wrap img { width: 100%; height: 100%; object-fit: cover; }
-.ch-logo-wrap .ch-logo-icon { font-size: 3rem; color: var(--orange); }
-.ch-hero-text { padding-bottom: 1rem; }
-.ch-hero-text h1 { font-size: 2rem; font-weight: 900; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
-.ch-hero-text .ch-meta { display: flex; gap: 1rem; flex-wrap: wrap; color: rgba(255,255,255,0.65); font-size: 0.85rem; margin-top: 0.4rem; }
+/* ══ HERO ══ */
+.ch-hero { position:relative; height:300px; overflow:hidden; background:linear-gradient(135deg,#060d1f 0%,#0f1e45 50%,#060d1f 100%); }
+.ch-hero-bg { position:absolute; inset:0; background: radial-gradient(ellipse 60% 80% at 20% 50%,rgba(26,58,143,0.3) 0%,transparent 65%), radial-gradient(ellipse 50% 70% at 85% 30%,rgba(244,117,32,0.18) 0%,transparent 65%); }
+.ch-hero-lines { position:absolute; inset:0; opacity:0.035; background-image: repeating-linear-gradient(0deg,transparent,transparent 44px,#fff 44px,#fff 45px), repeating-linear-gradient(90deg,transparent,transparent 44px,#fff 44px,#fff 45px); }
+.ch-hero-inner { position:relative; z-index:2; max-width:1200px; margin:0 auto; padding:2rem 2rem 0; display:flex; align-items:flex-end; gap:2rem; height:100%; }
+.ch-logo { width:130px; height:130px; border-radius:26px; flex-shrink:0; border:3px solid rgba(244,117,32,0.55); background:rgba(13,17,23,0.85); display:flex; align-items:center; justify-content:center; margin-bottom:-48px; overflow:hidden; position:relative; box-shadow:0 12px 40px rgba(0,0,0,0.6); cursor:default; }
+.ch-logo.editable { cursor:pointer; }
+.ch-logo img { width:100%; height:100%; object-fit:cover; }
+.ch-logo .default-icon { font-size:3.2rem; color:var(--orange); }
+.ch-logo-overlay { position:absolute; inset:0; border-radius:24px; background:rgba(0,0,0,0.6); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.3rem; opacity:0; transition:opacity 0.2s; }
+.ch-logo.editable:hover .ch-logo-overlay { opacity:1; }
+.ch-logo-overlay i { font-size:1.4rem; color:#fff; }
+.ch-logo-overlay span { font-size:0.65rem; color:rgba(255,255,255,0.85); font-weight:700; }
+.ch-hero-text { padding-bottom:1.2rem; }
+.ch-hero-text h1 { font-size:2.2rem; font-weight:900; text-shadow:0 2px 20px rgba(0,0,0,0.7); }
+.ch-hero-meta { display:flex; gap:1.2rem; flex-wrap:wrap; color:rgba(255,255,255,0.6); font-size:0.85rem; margin-top:0.5rem; }
+.ch-hero-meta span { display:flex; align-items:center; gap:0.35rem; }
+.ch-edit-btn { position:absolute; bottom:1rem; left:2rem; z-index:3; display:flex; align-items:center; gap:0.5rem; padding:0.5rem 1.1rem; border-radius:10px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.85); font-size:0.82rem; font-weight:700; cursor:pointer; transition:all 0.25s; backdrop-filter:blur(8px); font-family:inherit; }
+.ch-edit-btn:hover { background:rgba(244,117,32,0.3); border-color:var(--orange); color:#fff; }
 
-/* ── LAYOUT ── */
-.ch-layout {
-    max-width: 1200px; margin: 0 auto;
-    padding: 3.5rem 2rem 3rem;
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 2rem;
-}
-.ch-main {}
-.ch-sidebar {}
+/* ══ LAYOUT ══ */
+.ch-body { max-width:1200px; margin:0 auto; padding:4.5rem 2rem 3rem; display:grid; grid-template-columns:1fr 300px; gap:2rem; align-items:start; }
 
-/* ── CARDS ── */
-.info-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 1.8rem;
-    margin-bottom: 1.5rem;
-}
-.card-heading {
-    font-size: 0.95rem; font-weight: 700;
-    color: var(--orange);
-    display: flex; align-items: center; gap: 0.5rem;
-    padding-bottom: 1rem;
-    margin-bottom: 1.2rem;
-    border-bottom: 1px solid var(--border);
-}
+/* ══ CARDS ══ */
+.ch-card { background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:1.6rem; margin-bottom:1.5rem; }
+.ch-card-head { font-size:0.92rem; font-weight:700; color:var(--orange); display:flex; align-items:center; gap:0.5rem; padding-bottom:1rem; margin-bottom:1.2rem; border-bottom:1px solid var(--border); }
+.head-act { margin-right:auto; font-size:0.8rem; color:var(--text-muted); background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:0.3rem; font-family:inherit; padding:0; transition:color 0.2s; text-decoration:none; }
+.head-act:hover { color:var(--orange); }
 
-/* ── STATS STRIP ── */
-.stats-strip {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 1rem; margin-bottom: 1.5rem;
-}
-.stat-box {
-    background: var(--card-bg); border: 1px solid var(--border);
-    border-radius: 14px; padding: 1.2rem; text-align: center;
-}
-.stat-box .n { font-size: 2rem; font-weight: 900; background: var(--gradient-orange); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.stat-box .l { color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem; }
+/* ══ STATS ══ */
+.ch-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem; }
+.ch-stat { background:var(--card-bg); border:1px solid var(--border); border-radius:14px; padding:1.2rem; text-align:center; }
+.ch-stat .n { font-size:2rem; font-weight:900; background:var(--gradient-orange); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.ch-stat .l { color:var(--text-muted); font-size:0.8rem; margin-top:0.2rem; }
 
-/* ── JOB CARDS ── */
-.job-card-mini {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.2rem;
-    margin-bottom: 0.8rem;
-    display: flex; align-items: center; gap: 1rem;
-    text-decoration: none; color: inherit;
-    transition: all 0.25s;
-}
-.job-card-mini:hover { border-color: rgba(244,117,32,0.35); background: rgba(244,117,32,0.04); transform: translateX(-3px); }
-.jcm-icon { width: 46px; height: 46px; border-radius: 12px; background: var(--gradient-blue); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-.jcm-body { flex: 1; min-width: 0; }
-.jcm-body h4 { font-size: 0.9rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.jcm-body .jcm-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; display: flex; gap: 0.7rem; flex-wrap: wrap; }
+/* ══ TABS ══ */
+.ch-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); }
+.ch-tab { padding:0.75rem 1.3rem; border:none; border-bottom:2px solid transparent; background:none; color:var(--text-muted); font-size:0.88rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.2s; display:flex; align-items:center; gap:0.4rem; margin-bottom:-1px; }
+.ch-tab:hover { color:var(--text); }
+.ch-tab.active { color:var(--orange); border-bottom-color:var(--orange); }
+.ch-tab-badge { background:var(--orange); color:#fff; border-radius:10px; font-size:0.68rem; padding:0.1rem 0.4rem; font-weight:800; }
+.ch-tab-panels { padding-top:1.5rem; }
+.ch-tab-panel { display:none; }
+.ch-tab-panel.active { display:block; }
 
-/* ── SIDEBAR ── */
-.sidebar-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
-.sidebar-stat-row:last-child { border-bottom: none; }
-.sidebar-stat-row span:first-child { color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; }
-.sidebar-stat-row span:last-child { font-weight: 700; }
+/* ══ JOB ROW (owner) ══ */
+.job-row { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:0.8rem; display:flex; align-items:center; gap:1rem; transition:all 0.2s; }
+.job-row:hover { border-color:rgba(244,117,32,0.25); }
+.job-row-icon { width:44px; height:44px; border-radius:12px; background:var(--gradient-blue); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.job-row-body { flex:1; min-width:0; }
+.job-row-body h4 { font-size:0.92rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.3rem; }
+.job-row-meta { font-size:0.78rem; color:var(--text-muted); display:flex; gap:0.7rem; flex-wrap:wrap; align-items:center; }
+.job-row-acts { display:flex; gap:0.5rem; flex-shrink:0; }
+.jbtn { padding:0.35rem 0.75rem; border-radius:8px; font-size:0.78rem; font-weight:700; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:0.3rem; transition:all 0.2s; text-decoration:none; border:1px solid; }
+.jbtn-view { background:rgba(255,255,255,0.06); color:var(--text-muted); border-color:var(--border); }
+.jbtn-view:hover { border-color:var(--orange); color:var(--orange); }
+.jbtn-edit { background:rgba(34,85,204,0.15); color:#6fa0ff; border-color:rgba(34,85,204,0.3); }
+.jbtn-edit:hover { background:rgba(34,85,204,0.3); }
+.jbtn-del { background:rgba(229,62,62,0.12); color:#fc8181; border-color:rgba(229,62,62,0.25); }
+.jbtn-del:hover { background:rgba(229,62,62,0.25); }
 
-/* ── CONTACT BUTTON ── */
-.ch-contact-btn {
-    width: 100%; display: flex; align-items: center; justify-content: center;
-    gap: 0.5rem; padding: 0.9rem; border-radius: 12px;
-    background: var(--gradient-orange); color: white;
-    font-weight: 700; font-size: 0.95rem; text-decoration: none;
-    transition: all 0.3s; border: none; cursor: pointer; font-family: inherit;
-    margin-bottom: 0.8rem;
-}
-.ch-contact-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(244,117,32,0.4); }
-.ch-contact-btn.outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
-.ch-contact-btn.outline:hover { border-color: var(--orange); color: var(--orange); }
+/* ══ JOB CARD (public) ══ */
+.job-mini { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:1.1rem 1.2rem; margin-bottom:0.8rem; display:flex; align-items:center; gap:1rem; text-decoration:none; color:inherit; transition:all 0.25s; }
+.job-mini:hover { border-color:rgba(244,117,32,0.35); background:rgba(244,117,32,0.04); transform:translateX(-3px); }
+.jmico { width:44px; height:44px; border-radius:12px; background:var(--gradient-blue); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; }
+.jmbody { flex:1; min-width:0; }
+.jmbody h4 { font-size:0.9rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.jmmeta { font-size:0.78rem; color:var(--text-muted); margin-top:0.25rem; display:flex; gap:0.7rem; flex-wrap:wrap; }
 
-/* ── ABOUT BIO ── */
-.ch-bio { color: var(--text-muted); line-height: 1.8; font-size: 0.95rem; }
+/* ══ APPLICATION CARDS ══ */
+.app-card { background:rgba(255,255,255,0.025); border:1px solid var(--border); border-radius:14px; padding:1.4rem; margin-bottom:1rem; transition:border-color 0.2s; }
+.app-card:hover { border-color:rgba(34,85,204,0.3); }
+.app-top { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:0.8rem; flex-wrap:wrap; }
+.app-person { display:flex; align-items:center; gap:0.9rem; }
+.app-av { width:48px; height:48px; border-radius:50%; background:var(--gradient-blue); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; overflow:hidden; border:2px solid rgba(34,85,204,0.3); }
+.app-av img { width:100%; height:100%; object-fit:cover; }
+.app-nm { font-size:0.95rem; font-weight:700; }
+.app-sb { font-size:0.78rem; color:var(--text-muted); margin-top:0.15rem; }
+.app-pills { display:grid; grid-template-columns:repeat(3,1fr); gap:0.5rem; margin:0.8rem 0; }
+.app-pill { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; padding:0.45rem 0.7rem; font-size:0.78rem; }
+.app-pill-l { color:var(--text-muted); font-size:0.7rem; display:block; margin-bottom:0.1rem; }
+.app-pill-v { font-weight:700; }
+.app-msg { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-right:3px solid rgba(244,117,32,0.4); border-radius:9px; padding:0.8rem 1rem; color:var(--text-muted); font-size:0.84rem; line-height:1.7; margin-bottom:0.9rem; }
+.app-acts { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+.abtn { padding:0.4rem 0.9rem; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; font-family:inherit; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem; transition:all 0.2s; border:1px solid; }
+.abtn-ok { background:rgba(56,161,105,0.15); color:#68d391; border-color:rgba(56,161,105,0.3); }
+.abtn-ok:hover { background:rgba(56,161,105,0.28); }
+.abtn-no { background:rgba(229,62,62,0.12); color:#fc8181; border-color:rgba(229,62,62,0.25); }
+.abtn-no:hover { background:rgba(229,62,62,0.25); }
+.abtn-pr { background:rgba(255,255,255,0.06); color:var(--text-muted); border-color:var(--border); }
+.abtn-pr:hover { border-color:var(--orange); color:var(--orange); }
 
-/* ── EDIT BANNER (own profile) ── */
-.edit-banner {
-    background: linear-gradient(90deg, rgba(244,117,32,0.12), rgba(34,85,204,0.08));
-    border: 1px solid rgba(244,117,32,0.25);
-    border-radius: 14px; padding: 1rem 1.5rem;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
-}
-.edit-banner p { font-size: 0.9rem; color: var(--text-muted); }
+/* ══ FILTER PILLS ══ */
+.filter-pills { display:flex; gap:0.4rem; flex-wrap:wrap; margin-bottom:1.2rem; }
+.fpill { padding:0.35rem 0.9rem; border-radius:20px; border:1.5px solid var(--border); color:var(--text-muted); background:none; font-size:0.8rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.fpill.active,.fpill:hover { border-color:var(--orange); color:var(--orange); background:rgba(244,117,32,0.08); }
 
-/* ── RESPONSIVE ── */
-@media(max-width: 900px) {
-    .ch-layout { grid-template-columns: 1fr; }
-    .ch-sidebar { order: -1; }
-    .ch-hero { height: 220px; }
-    .ch-logo-wrap { width: 90px; height: 90px; border-radius: 18px; }
-    .ch-hero-text h1 { font-size: 1.4rem; }
-}
-@media(max-width: 640px) {
-    .stats-strip { grid-template-columns: 1fr 1fr; }
-    .ch-hero-content { gap: 1rem; }
-}
+/* ══ SIDEBAR ══ */
+.sb-row { display:flex; justify-content:space-between; align-items:center; padding:0.7rem 0; border-bottom:1px solid var(--border); font-size:0.86rem; }
+.sb-row:last-child { border-bottom:none; }
+.sb-row .lbl { color:var(--text-muted); display:flex; align-items:center; gap:0.4rem; }
+.sb-row .val { font-weight:700; }
+.ch-btn { width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.85rem; border-radius:12px; background:var(--gradient-orange); color:white; font-weight:700; font-size:0.92rem; text-decoration:none; transition:all 0.3s; border:none; cursor:pointer; font-family:inherit; margin-bottom:0.7rem; }
+.ch-btn:hover { transform:translateY(-2px); box-shadow:0 8px 25px rgba(244,117,32,0.4); }
+.ch-btn.outline { background:transparent; border:1.5px solid var(--border); color:var(--text); box-shadow:none; }
+.ch-btn.outline:hover { border-color:var(--orange); color:var(--orange); transform:translateY(-1px); box-shadow:none; }
+.ch-bio { color:var(--text-muted); line-height:1.8; font-size:0.92rem; }
+
+/* ══ EMPTY ══ */
+.empty-st { text-align:center; padding:3rem 2rem; color:var(--text-muted); }
+.empty-st i { font-size:3rem; opacity:0.12; display:block; margin-bottom:0.8rem; }
+
+/* ══ MODAL ══ */
+.modal-bd { display:none; position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); align-items:center; justify-content:center; padding:1rem; }
+.modal-bd.open { display:flex; }
+.modal-box { background:var(--dark2); border:1px solid var(--border); border-radius:20px; width:100%; max-width:580px; max-height:92vh; overflow-y:auto; box-shadow:0 24px 60px rgba(0,0,0,0.6); animation:mIn 0.22s ease; }
+.modal-box.sm { max-width:420px; }
+@keyframes mIn { from{opacity:0;transform:translateY(18px) scale(0.97)} to{opacity:1;transform:none} }
+.modal-hd { display:flex; align-items:center; justify-content:space-between; padding:1.4rem 1.8rem 1.2rem; border-bottom:1px solid var(--border); }
+.modal-hd h3 { font-size:1.05rem; font-weight:900; display:flex; align-items:center; gap:0.6rem; }
+.modal-hd h3 i { color:var(--orange); }
+.mx { background:none; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer; width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+.mx:hover { background:rgba(255,255,255,0.08); color:var(--text); }
+.modal-tabs { display:flex; gap:0.4rem; margin-bottom:1.5rem; background:rgba(255,255,255,0.04); border-radius:12px; padding:0.35rem; }
+.mtab { flex:1; padding:0.55rem; border-radius:8px; border:none; background:none; color:var(--text-muted); font-size:0.83rem; font-weight:700; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:0.35rem; transition:all 0.2s; }
+.mtab.active { background:var(--dark3); color:var(--orange); box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+.mpanel { display:none; }
+.mpanel.active { display:block; }
+.modal-body { padding:1.6rem 1.8rem; }
+.mf { margin-bottom:1.1rem; }
+.mf label { font-size:0.8rem; font-weight:700; color:var(--text-muted); display:flex; align-items:center; gap:0.35rem; margin-bottom:0.4rem; }
+.mf label i { color:var(--orange); }
+.mi,.mta,.msel { width:100%; padding:0.75rem 1rem; background:rgba(255,255,255,0.05); border:1.5px solid var(--border); border-radius:10px; color:var(--text); font-family:inherit; font-size:0.9rem; transition:all 0.2s; outline:none; box-sizing:border-box; }
+.mi:focus,.mta:focus,.msel:focus { border-color:var(--orange); background:rgba(244,117,32,0.04); box-shadow:0 0 0 4px rgba(244,117,32,0.08); }
+.mta { resize:vertical; min-height:110px; }
+.msel option { background:var(--dark2); }
+.mgrid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.logo-zone { display:flex; align-items:center; gap:1.4rem; padding:1.1rem; background:rgba(255,255,255,0.03); border:1.5px dashed var(--border); border-radius:14px; cursor:pointer; transition:all 0.25s; position:relative; }
+.logo-zone:hover { border-color:var(--orange); background:rgba(244,117,32,0.04); }
+.logo-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.logo-thumb { width:68px; height:68px; border-radius:15px; flex-shrink:0; background:var(--gradient-blue); overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:1.7rem; border:2px solid rgba(244,117,32,0.3); }
+.logo-thumb img { width:100%; height:100%; object-fit:cover; }
+.logo-txt h4 { font-size:0.9rem; font-weight:700; margin-bottom:0.25rem; }
+.logo-txt p { font-size:0.78rem; color:var(--text-muted); }
+.logo-chosen { font-size:0.78rem; color:var(--orange); margin-top:0.3rem; display:none; font-weight:700; }
+.modal-ft { padding:1.1rem 1.8rem; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:0.6rem; }
+.btn-save { background:var(--gradient-orange); color:white; border:none; padding:0.65rem 1.8rem; border-radius:10px; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit; transition:all 0.2s; display:inline-flex; align-items:center; gap:0.4rem; text-decoration:none; }
+.btn-save:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(244,117,32,0.35); }
+.btn-save.red { background:linear-gradient(135deg,#e53e3e,#c53030); }
+.btn-cancel { background:transparent; color:var(--text-muted); border:1.5px solid var(--border); padding:0.65rem 1.2rem; border-radius:10px; font-weight:700; font-size:0.88rem; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+.btn-cancel:hover { border-color:var(--text-muted); color:var(--text); }
+.confirm-icon { width:64px; height:64px; border-radius:50%; background:rgba(229,62,62,0.15); border:2px solid rgba(229,62,62,0.3); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:#fc8181; margin:0 auto 1.2rem; }
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:960px){.ch-body{grid-template-columns:1fr}.ch-sidebar-col{order:-1}.ch-hero{height:240px}.ch-logo{width:100px;height:100px}.ch-hero-text h1{font-size:1.6rem}}
+@media(max-width:640px){.ch-stats{grid-template-columns:1fr 1fr}.app-pills{grid-template-columns:1fr 1fr}.mgrid{grid-template-columns:1fr}.ch-edit-btn{left:1rem}}
 </style>
 {% endblock %}
 {% block content %}
 
-<!-- HERO -->
+{% set is_owner = (session.user_id == channel.id) %}
+{% set cmap = {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'} %}
+{% set imap = {'journalist':'newspaper','photographer':'camera','content':'play-circle','editor':'film','presenter':'microphone','reporter':'broadcast-tower'} %}
+
+{% if is_owner %}
+<!-- ══ MODAL: Edit Profile ══ -->
+<div class="modal-bd" id="editModal">
+  <div class="modal-box">
+    <div class="modal-hd"><h3><i class="fas fa-edit"></i> تعديل ملف القناة</h3><button class="mx" onclick="closeM('editModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <button class="mtab active" id="etab-info" onclick="switchMTab('info',this)"><i class="fas fa-info-circle"></i> المعلومات</button>
+        <button class="mtab" id="etab-logo" onclick="switchMTab('logo',this)"><i class="fas fa-image"></i> الشعار</button>
+      </div>
+      <div class="mpanel active" id="epanel-info">
+        <form method="POST" action="/channel/{{ channel.id }}/update" id="infoForm">
+          <div class="mf"><label><i class="fas fa-tv"></i> اسم القناة</label><input class="mi" type="text" name="name" value="{{ channel.name }}" required></div>
+          <div class="mf"><label><i class="fas fa-map-marker-alt"></i> الموقع</label><input class="mi" type="text" name="location" value="{{ channel.location or '' }}" placeholder="مثال: الجزائر العاصمة..."></div>
+          <div class="mf"><label><i class="fas fa-align-right"></i> نبذة عن القناة</label><textarea class="mta" name="bio" placeholder="اكتب نبذة تعريفية...">{{ channel.bio or '' }}</textarea></div>
+        </form>
+      </div>
+      <div class="mpanel" id="epanel-logo">
+        <form method="POST" action="/channel/{{ channel.id }}/upload-picture" enctype="multipart/form-data" id="logoForm">
+          <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:1rem">صورة مربعة 400×400 بكسل على الأقل.</p>
+          <label class="logo-zone">
+            <div class="logo-thumb" id="logoThumb">{% if channel.profile_image %}<img src="/static/uploads/{{ channel.profile_image }}" id="logoImg">{% else %}<i class="fas fa-tv"></i>{% endif %}</div>
+            <div class="logo-txt"><h4>{% if channel.profile_image %}تغيير الشعار{% else %}رفع الشعار{% endif %}</h4><p>JPG، PNG، WEBP</p><div class="logo-chosen" id="logoChosen"></div></div>
+            <input type="file" name="profile_image" id="logoInput" accept="image/*">
+          </label>
+        </form>
+      </div>
+    </div>
+    <div class="modal-ft"><button class="btn-cancel" onclick="closeM('editModal')">إلغاء</button><button class="btn-save" onclick="submitEdit()"><i class="fas fa-save"></i> حفظ</button></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Post / Edit Job ══ -->
+<div class="modal-bd" id="jobModal">
+  <div class="modal-box">
+    <div class="modal-hd"><h3 id="jobModalTitle"><i class="fas fa-plus-circle"></i> وظيفة جديدة</h3><button class="mx" onclick="closeM('jobModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body">
+      <form method="POST" id="jobForm" action="/post-job">
+        <input type="hidden" name="job_id" id="jfId">
+        <div class="mf"><label><i class="fas fa-heading"></i> عنوان الوظيفة *</label><input class="mi" type="text" name="title" id="jfTitle" required placeholder="مثال: مصور صحفي ميداني"></div>
+        <div class="mgrid">
+          <div class="mf"><label><i class="fas fa-tag"></i> التخصص *</label>
+            <select class="msel" name="category" id="jfCat" required><option value="">اختر</option><option value="journalist">صحفي</option><option value="photographer">مصور</option><option value="content">صانع محتوى</option><option value="editor">مونتير</option><option value="presenter">مذيع</option><option value="reporter">مراسل</option></select>
+          </div>
+          <div class="mf"><label><i class="fas fa-clock"></i> نوع العمل</label>
+            <select class="msel" name="job_type" id="jfType"><option value="">اختر</option><option value="دوام كامل">دوام كامل</option><option value="دوام جزئي">دوام جزئي</option><option value="مستقل">مستقل / فريلانس</option><option value="عقد مؤقت">عقد مؤقت</option></select>
+          </div>
+          <div class="mf"><label><i class="fas fa-map-marker-alt"></i> الموقع</label><input class="mi" type="text" name="location" id="jfLoc" placeholder="الجزائر، عن بُعد..."></div>
+          <div class="mf"><label><i class="fas fa-dollar-sign"></i> الراتب</label><input class="mi" type="text" name="salary" id="jfSal" placeholder="مثال: 60,000 دج"></div>
+        </div>
+        <div class="mf"><label><i class="fas fa-align-right"></i> وصف الوظيفة *</label><textarea class="mta" name="description" id="jfDesc" required placeholder="اشرح تفاصيل الوظيفة..."></textarea></div>
+        <div class="mf"><label><i class="fas fa-list-check"></i> المتطلبات</label><textarea class="mta" name="requirements" id="jfReqs" style="min-height:80px" placeholder="الخبرة والمؤهلات..."></textarea></div>
+      </form>
+    </div>
+    <div class="modal-ft"><button class="btn-cancel" onclick="closeM('jobModal')">إلغاء</button><button class="btn-save" onclick="document.getElementById('jobForm').submit()"><i class="fas fa-paper-plane"></i> <span id="jfSaveLbl">نشر الوظيفة</span></button></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Delete Confirm ══ -->
+<div class="modal-bd" id="delModal">
+  <div class="modal-box sm">
+    <div class="modal-hd"><h3><i class="fas fa-trash"></i> تأكيد الحذف</h3><button class="mx" onclick="closeM('delModal')"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body" style="text-align:center;padding:2rem 1.8rem">
+      <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
+      <div style="font-size:1.05rem;font-weight:900;margin-bottom:0.5rem">هل أنت متأكد؟</div>
+      <p style="color:var(--text-muted);font-size:0.88rem">سيتم حذف الوظيفة وجميع طلبات التقديم المرتبطة بها نهائياً.</p>
+    </div>
+    <div class="modal-ft"><button class="btn-cancel" onclick="closeM('delModal')">إلغاء</button><a id="delLink" href="#" class="btn-save red"><i class="fas fa-trash"></i> حذف نهائياً</a></div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ══ HERO ══ -->
 <div class="ch-hero">
-    <div class="ch-hero-bg"></div>
-    <div class="ch-hero-pattern"></div>
-    <div class="ch-hero-content">
-        <div class="ch-logo-wrap">
-            {% if channel.profile_image %}
-                <img src="/static/uploads/{{ channel.profile_image }}" alt="{{ channel.name }}">
-            {% else %}
-                <i class="fas fa-tv ch-logo-icon"></i>
-            {% endif %}
-        </div>
-        <div class="ch-hero-text">
-            <h1>{{ channel.name }}</h1>
-            <div class="ch-meta">
-                <span><i class="fas fa-tv"></i> قناة إعلامية</span>
-                {% if channel.location %}<span><i class="fas fa-map-marker-alt"></i> {{ channel.location }}</span>{% endif %}
-                <span><i class="fas fa-calendar"></i> منذ {{ channel.created_at[:4] }}</span>
-            </div>
-        </div>
+  <div class="ch-hero-bg"></div>
+  <div class="ch-hero-lines"></div>
+  <div class="ch-hero-inner">
+    <div class="ch-logo{% if is_owner %} editable{% endif %}"{% if is_owner %} onclick="openM('editModal','logo')"{% endif %}>
+      {% if channel.profile_image %}<img src="/static/uploads/{{ channel.profile_image }}" alt="{{ channel.name }}" id="heroLogo">{% else %}<i class="fas fa-tv default-icon"></i>{% endif %}
+      {% if is_owner %}<div class="ch-logo-overlay"><i class="fas fa-camera"></i><span>تغيير الشعار</span></div>{% endif %}
     </div>
+    <div class="ch-hero-text">
+      <h1>{{ channel.name }}</h1>
+      <div class="ch-hero-meta">
+        <span><i class="fas fa-tv"></i> قناة إعلامية</span>
+        {% if channel.location %}<span><i class="fas fa-map-marker-alt"></i> {{ channel.location }}</span>{% endif %}
+        <span><i class="fas fa-calendar"></i> منذ {{ channel.created_at[:4] }}</span>
+        <span><i class="fas fa-briefcase"></i> {{ jobs|length }} وظيفة</span>
+      </div>
+    </div>
+  </div>
+  {% if is_owner %}<button class="ch-edit-btn" onclick="openM('editModal','info')"><i class="fas fa-pen"></i> تعديل المعلومات</button>{% endif %}
 </div>
 
-<!-- BODY -->
-<div class="ch-layout">
+<!-- ══ BODY ══ -->
+<div class="ch-body">
+  <div class="ch-main">
 
-    <!-- MAIN -->
-    <div class="ch-main">
-
-        {% if session.user_id == channel.id %}
-        <div class="edit-banner">
-            <div>
-                <strong>هذا ملفك الشخصي</strong>
-                <p>يمكنك تعديل معلوماتك وصورتك في أي وقت</p>
-            </div>
-            <a href="/profile/{{ channel.id }}" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> تعديل الملف</a>
-        </div>
-        {% endif %}
-
-        <!-- STATS -->
-        <div class="stats-strip">
-            <div class="stat-box">
-                <div class="n">{{ jobs|length }}</div>
-                <div class="l">وظيفة منشورة</div>
-            </div>
-            <div class="stat-box">
-                <div class="n">{{ total_applications }}</div>
-                <div class="l">طلب وصل</div>
-            </div>
-            <div class="stat-box">
-                <div class="n">{{ accepted_count }}</div>
-                <div class="l">كادر مقبول</div>
-            </div>
-        </div>
-
-        <!-- ABOUT -->
-        {% if channel.bio %}
-        <div class="info-card">
-            <div class="card-heading"><i class="fas fa-info-circle"></i> عن القناة</div>
-            <p class="ch-bio">{{ channel.bio }}</p>
-        </div>
-        {% endif %}
-
-        <!-- ACTIVE JOBS -->
-        <div class="info-card">
-            <div class="card-heading"><i class="fas fa-briefcase"></i> الوظائف المتاحة حالياً</div>
-            {% if jobs %}
-                {% for job in jobs %}
-                <a href="/job/{{ job.id }}" class="job-card-mini">
-                    <div class="jcm-icon">
-                        <i class="fas fa-{{ {'journalist':'newspaper','photographer':'camera','content':'play-circle','editor':'film','presenter':'microphone','reporter':'broadcast-tower'}.get(job.category, 'briefcase') }}"></i>
-                    </div>
-                    <div class="jcm-body">
-                        <h4>{{ job.title }}</h4>
-                        <div class="jcm-meta">
-                            {% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}
-                            {% if job.salary %}<span><i class="fas fa-dollar-sign"></i> {{ job.salary }}</span>{% endif %}
-                            <span><i class="fas fa-clock"></i> {{ job.created_at[:10] }}</span>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center">
-                        <span class="badge badge-blue">{{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}</span>
-                        {% if job.job_type %}<span class="badge badge-orange">{{ job.job_type }}</span>{% endif %}
-                    </div>
-                </a>
-                {% endfor %}
-                <div style="text-align:center;margin-top:1rem">
-                    <a href="/jobs?channel={{ channel.id }}" class="btn btn-outline btn-sm">عرض كل الوظائف</a>
-                </div>
-            {% else %}
-                <div style="text-align:center;padding:2.5rem;color:var(--text-muted)">
-                    <i class="fas fa-briefcase" style="font-size:2.5rem;opacity:0.2;margin-bottom:0.8rem;display:block"></i>
-                    <p>لا توجد وظائف منشورة حالياً</p>
-                    {% if session.user_id == channel.id %}
-                    <a href="/post-job" class="btn btn-primary btn-sm" style="margin-top:0.8rem"><i class="fas fa-plus"></i> انشر أول وظيفة</a>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
+    <!-- STATS -->
+    <div class="ch-stats">
+      <div class="ch-stat"><div class="n">{{ jobs|length }}</div><div class="l">وظيفة منشورة</div></div>
+      <div class="ch-stat"><div class="n">{{ total_applications }}</div><div class="l">إجمالي الطلبات</div></div>
+      <div class="ch-stat"><div class="n">{{ accepted_count }}</div><div class="l">كادر مقبول</div></div>
     </div>
 
-    <!-- SIDEBAR -->
-    <div class="ch-sidebar">
+    {% if is_owner %}
+    <!-- ══ OWNER: Dashboard tabs ══ -->
+    <div class="ch-card" style="padding-bottom:0">
+      <div class="ch-tabs">
+        <button class="ch-tab active" onclick="switchTab('t-jobs',this)"><i class="fas fa-briefcase"></i> الوظائف {% if jobs %}<span class="ch-tab-badge">{{ jobs|length }}</span>{% endif %}</button>
+        <button class="ch-tab" onclick="switchTab('t-apps',this)"><i class="fas fa-inbox"></i> الطلبات {% if applications %}<span class="ch-tab-badge">{{ applications|length }}</span>{% endif %}</button>
+        <button class="ch-tab" onclick="switchTab('t-about',this)"><i class="fas fa-info-circle"></i> عن القناة</button>
+      </div>
+      <div class="ch-tab-panels">
 
-        <!-- CTA -->
-        {% if session.user_id and session.account_type == 'journalist' %}
-        <div class="info-card" style="margin-bottom:1.5rem">
-            <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1rem;text-align:center">هل تريد العمل مع <strong style="color:var(--text)">{{ channel.name }}</strong>؟</p>
-            <a href="/jobs" class="ch-contact-btn"><i class="fas fa-paper-plane"></i> تصفح وظائف القناة</a>
+        <!-- TAB: Jobs -->
+        <div class="ch-tab-panel active" id="t-jobs">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem">
+            <button onclick="openJobNew()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> وظيفة جديدة</button>
+          </div>
+          {% if jobs %}
+            {% for job in jobs %}
+            <div class="job-row">
+              <div class="job-row-icon"><i class="fas fa-{{ imap.get(job.category,'briefcase') }}"></i></div>
+              <div class="job-row-body">
+                <h4>{{ job.title }}</h4>
+                <div class="job-row-meta">
+                  <span class="badge badge-blue" style="font-size:0.7rem">{{ cmap.get(job.category,job.category) }}</span>
+                  {% if job.job_type %}<span class="badge badge-orange" style="font-size:0.7rem">{{ job.job_type }}</span>{% endif %}
+                  {% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}
+                  <span><i class="fas fa-calendar"></i> {{ job.created_at[:10] }}</span>
+                </div>
+              </div>
+              <div class="job-row-acts">
+                <a href="/job/{{ job.id }}" class="jbtn jbtn-view"><i class="fas fa-eye"></i></a>
+                <button class="jbtn jbtn-edit" onclick="openJobEdit({{ job.id }},'{{ job.title|e }}','{{ job.category }}','{{ (job.job_type or '')|e }}','{{ (job.location or '')|e }}','{{ (job.salary or '')|e }}','{{ job.description|e|replace('\n',' ')|replace("'","\\'") }}','{{ (job.requirements or '')|e|replace('\n',' ')|replace("'","\\'") }}')"><i class="fas fa-pen"></i></button>
+                <button class="jbtn jbtn-del" onclick="openJobDel({{ job.id }})"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="empty-st"><i class="fas fa-briefcase"></i><p>لم تنشر أي وظيفة بعد</p><button onclick="openJobNew()" class="btn btn-primary btn-sm" style="margin-top:1rem"><i class="fas fa-plus"></i> انشر أول وظيفة</button></div>
+          {% endif %}
         </div>
-        {% elif not session.user_id %}
-        <div class="info-card" style="margin-bottom:1.5rem;text-align:center">
-            <i class="fas fa-lock" style="font-size:2rem;color:var(--orange);margin-bottom:0.8rem;display:block"></i>
-            <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1rem">سجّل دخولك للتقدم لوظائف هذه القناة</p>
-            <a href="/login" class="ch-contact-btn"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a>
-            <a href="/register" class="ch-contact-btn outline"><i class="fas fa-user-plus"></i> إنشاء حساب</a>
-        </div>
-        {% endif %}
 
-        {% if session.user_id == channel.id %}
-        <div class="info-card" style="margin-bottom:1.5rem">
-            <a href="/post-job" class="ch-contact-btn"><i class="fas fa-plus"></i> نشر وظيفة جديدة</a>
-            <a href="/dashboard" class="ch-contact-btn outline"><i class="fas fa-tachometer-alt"></i> لوحة التحكم</a>
-        </div>
-        {% endif %}
-
-        <!-- CHANNEL INFO -->
-        <div class="info-card">
-            <div class="card-heading"><i class="fas fa-building"></i> معلومات القناة</div>
-            {% if channel.location %}
-            <div class="sidebar-stat-row">
-                <span><i class="fas fa-map-marker-alt"></i> الموقع</span>
-                <span>{{ channel.location }}</span>
+        <!-- TAB: Applications -->
+        <div class="ch-tab-panel" id="t-apps">
+          {% if applications %}
+          <div class="filter-pills">
+            <button class="fpill active" onclick="fApps('all',this)">الكل ({{ applications|length }})</button>
+            <button class="fpill" onclick="fApps('pending',this)">قيد المراجعة ({{ applications|selectattr('status','eq','pending')|list|length }})</button>
+            <button class="fpill" onclick="fApps('accepted',this)">مقبول ({{ applications|selectattr('status','eq','accepted')|list|length }})</button>
+            <button class="fpill" onclick="fApps('rejected',this)">مرفوض ({{ applications|selectattr('status','eq','rejected')|list|length }})</button>
+          </div>
+          {% for app in applications %}
+          <div class="app-card" data-status="{{ app.status }}">
+            <div class="app-top">
+              <div class="app-person">
+                <div class="app-av">{% if app.applicant_image %}<img src="/static/uploads/{{ app.applicant_image }}">{% else %}<i class="fas fa-user"></i>{% endif %}</div>
+                <div>
+                  <div class="app-nm">{{ app.applicant_name }}</div>
+                  <div class="app-sb"><i class="fas fa-briefcase"></i> {{ app.job_title }}{% if app.applicant_location %} · <i class="fas fa-map-marker-alt"></i> {{ app.applicant_location }}{% endif %} · <i class="fas fa-calendar"></i> {{ app.created_at[:10] }}</div>
+                </div>
+              </div>
+              <span class="badge {% if app.status=='accepted' %}badge-green{% elif app.status=='rejected' %}badge-red{% else %}badge-orange{% endif %}">{{ {'pending':'قيد المراجعة','accepted':'مقبول','rejected':'مرفوض'}.get(app.status,app.status) }}</span>
+            </div>
+            {% if app.skills or app.education or app.years_experience %}
+            <div class="app-pills">
+              {% if app.skills %}<div class="app-pill"><span class="app-pill-l"><i class="fas fa-tools"></i> المهارات</span><span class="app-pill-v">{{ app.skills[:35] }}{% if app.skills|length>35 %}...{% endif %}</span></div>{% endif %}
+              {% if app.education %}<div class="app-pill"><span class="app-pill-l"><i class="fas fa-graduation-cap"></i> المؤهل</span><span class="app-pill-v">{{ app.education[:30] }}{% if app.education|length>30 %}...{% endif %}</span></div>{% endif %}
+              {% if app.years_experience %}<div class="app-pill"><span class="app-pill-l"><i class="fas fa-star"></i> الخبرة</span><span class="app-pill-v">{{ app.years_experience }} سنوات</span></div>{% endif %}
             </div>
             {% endif %}
-            <div class="sidebar-stat-row">
-                <span><i class="fas fa-calendar-plus"></i> تاريخ الانضمام</span>
-                <span>{{ channel.created_at[:7] }}</span>
+            {% if app.message %}<div class="app-msg">{{ app.message }}</div>{% endif %}
+            <div class="app-acts">
+              {% if app.status != 'accepted' %}<a href="/update-application/{{ app.id }}/accepted" class="abtn abtn-ok"><i class="fas fa-check"></i> قبول</a>{% endif %}
+              {% if app.status != 'rejected' %}<a href="/update-application/{{ app.id }}/rejected" class="abtn abtn-no"><i class="fas fa-times"></i> رفض</a>{% endif %}
+              <a href="/profile/{{ app.journalist_id }}" class="abtn abtn-pr" target="_blank"><i class="fas fa-user"></i> الملف</a>
+              {% if app.cv_filename %}<a href="/static/uploads/{{ app.cv_filename }}" class="abtn abtn-pr" download><i class="fas fa-file-pdf"></i> CV</a>{% endif %}
             </div>
-            <div class="sidebar-stat-row">
-                <span><i class="fas fa-briefcase"></i> الوظائف المنشورة</span>
-                <span>{{ jobs|length }}</span>
-            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="empty-st"><i class="fas fa-inbox"></i><p>لا توجد طلبات بعد</p></div>
+          {% endif %}
         </div>
 
-        <!-- SPECIALTIES (from job categories) -->
-        {% if job_categories %}
-        <div class="info-card">
-            <div class="card-heading"><i class="fas fa-tags"></i> التخصصات المطلوبة</div>
-            <div style="display:flex;flex-wrap:wrap;gap:0.5rem">
-                {% for cat in job_categories %}
-                <span class="badge badge-blue">{{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(cat, cat) }}</span>
-                {% endfor %}
-            </div>
+        <!-- TAB: About -->
+        <div class="ch-tab-panel" id="t-about">
+          {% if channel.bio %}<p class="ch-bio">{{ channel.bio }}</p>{% else %}<p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">لم تتم إضافة نبذة. <a href="javascript:void(0)" onclick="openM('editModal','info')" style="color:var(--orange);text-decoration:none">أضف الآن ←</a></p>{% endif %}
         </div>
-        {% endif %}
+
+      </div>
     </div>
 
+    {% else %}
+    <!-- ══ PUBLIC view ══ -->
+    <div class="ch-card">
+      <div class="ch-card-head"><i class="fas fa-info-circle"></i> عن القناة</div>
+      {% if channel.bio %}<p class="ch-bio">{{ channel.bio }}</p>{% else %}<p style="color:var(--text-muted);font-style:italic">لا توجد نبذة</p>{% endif %}
+    </div>
+    <div class="ch-card">
+      <div class="ch-card-head"><i class="fas fa-briefcase"></i> الوظائف المتاحة</div>
+      {% if jobs %}
+        {% for job in jobs %}
+        <a href="/job/{{ job.id }}" class="job-mini">
+          <div class="jmico"><i class="fas fa-{{ imap.get(job.category,'briefcase') }}"></i></div>
+          <div class="jmbody"><h4>{{ job.title }}</h4><div class="jmmeta">{% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}{% if job.salary %}<span><i class="fas fa-dollar-sign"></i> {{ job.salary }}</span>{% endif %}<span><i class="fas fa-clock"></i> {{ job.created_at[:10] }}</span></div></div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;flex-shrink:0"><span class="badge badge-blue">{{ cmap.get(job.category,job.category) }}</span>{% if job.job_type %}<span class="badge badge-orange">{{ job.job_type }}</span>{% endif %}</div>
+        </a>
+        {% endfor %}
+      {% else %}<div class="empty-st"><i class="fas fa-briefcase"></i><p>لا توجد وظائف حالياً</p></div>{% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ── SIDEBAR ── -->
+  <div class="ch-sidebar-col">
+    {% if is_owner %}
+    <div class="ch-card">
+      <div class="ch-card-head"><i class="fas fa-cog"></i> إدارة القناة</div>
+      <button onclick="openM('editModal','info')" class="ch-btn"><i class="fas fa-edit"></i> تعديل المعلومات</button>
+      <button onclick="openM('editModal','logo')" class="ch-btn outline"><i class="fas fa-image"></i> تغيير الشعار</button>
+      <button onclick="openJobNew()" class="ch-btn outline"><i class="fas fa-plus"></i> نشر وظيفة جديدة</button>
+    </div>
+    {% elif session.user_id and session.account_type == 'journalist' %}
+    <div class="ch-card">
+      <p style="color:var(--text-muted);font-size:0.87rem;margin-bottom:1rem;text-align:center">هل تريد العمل مع <strong style="color:var(--text)">{{ channel.name }}</strong>؟</p>
+      <a href="/jobs" class="ch-btn"><i class="fas fa-paper-plane"></i> تصفح الوظائف</a>
+    </div>
+    {% elif not session.user_id %}
+    <div class="ch-card" style="text-align:center">
+      <i class="fas fa-lock" style="font-size:2rem;color:var(--orange);margin-bottom:0.8rem;display:block"></i>
+      <p style="color:var(--text-muted);font-size:0.87rem;margin-bottom:1rem">سجّل دخولك للتقدم</p>
+      <a href="/login" class="ch-btn"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</a>
+      <a href="/register" class="ch-btn outline"><i class="fas fa-user-plus"></i> إنشاء حساب</a>
+    </div>
+    {% endif %}
+
+    <div class="ch-card">
+      <div class="ch-card-head"><i class="fas fa-building"></i> معلومات القناة</div>
+      {% if channel.location %}<div class="sb-row"><span class="lbl"><i class="fas fa-map-marker-alt"></i> الموقع</span><span class="val">{{ channel.location }}</span></div>{% endif %}
+      <div class="sb-row"><span class="lbl"><i class="fas fa-calendar-plus"></i> الانضمام</span><span class="val">{{ channel.created_at[:7] }}</span></div>
+      <div class="sb-row"><span class="lbl"><i class="fas fa-briefcase"></i> الوظائف</span><span class="val">{{ jobs|length }}</span></div>
+      <div class="sb-row"><span class="lbl"><i class="fas fa-inbox"></i> الطلبات</span><span class="val">{{ total_applications }}</span></div>
+    </div>
+
+    {% if job_categories %}
+    <div class="ch-card">
+      <div class="ch-card-head"><i class="fas fa-tags"></i> التخصصات</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem">{% for cat in job_categories %}<span class="badge badge-blue">{{ cmap.get(cat,cat) }}</span>{% endfor %}</div>
+    </div>
+    {% endif %}
+  </div>
 </div>
+
+<script>
+/* ─ Modal ─ */
+let eMTab = 'info';
+function openM(id, tab) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (id === 'editModal' && tab) switchMTab(tab, document.getElementById('etab-' + tab));
+}
+function closeM(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+function switchMTab(tab, btn) {
+    eMTab = tab;
+    document.querySelectorAll('.mtab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mpanel').forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.getElementById('epanel-' + tab).classList.add('active');
+}
+function submitEdit() {
+    if (eMTab === 'logo') {
+        if (!document.getElementById('logoInput').files.length) { alert('يرجى اختيار صورة'); return; }
+        document.getElementById('logoForm').submit();
+    } else { document.getElementById('infoForm').submit(); }
+}
+/* Logo preview */
+document.getElementById('logoInput') && document.getElementById('logoInput').addEventListener('change', function() {
+    const f = this.files[0]; if (!f) return;
+    document.getElementById('logoChosen').textContent = '✓ ' + f.name;
+    document.getElementById('logoChosen').style.display = 'block';
+    const r = new FileReader();
+    r.onload = e => {
+        document.getElementById('logoThumb').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+        const h = document.getElementById('heroLogo'); if (h) h.src = e.target.result;
+    };
+    r.readAsDataURL(f);
+});
+
+/* ─ Dashboard tabs ─ */
+function switchTab(id, btn) {
+    document.querySelectorAll('.ch-tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.ch-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    btn.classList.add('active');
+}
+
+/* ─ Job modal ─ */
+function openJobNew() {
+    document.getElementById('jobModalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> نشر وظيفة جديدة';
+    document.getElementById('jfSaveLbl').textContent = 'نشر الوظيفة';
+    document.getElementById('jobForm').action = '/post-job';
+    ['jfTitle','jfLoc','jfSal','jfDesc','jfReqs'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('jfCat').value = '';
+    document.getElementById('jfType').value = '';
+    openM('jobModal');
+}
+function openJobEdit(id, title, cat, jtype, loc, sal, desc, reqs) {
+    document.getElementById('jobModalTitle').innerHTML = '<i class="fas fa-pen"></i> تعديل الوظيفة';
+    document.getElementById('jfSaveLbl').textContent = 'حفظ التعديلات';
+    document.getElementById('jobForm').action = '/job/' + id + '/edit';
+    document.getElementById('jfId').value = id;
+    document.getElementById('jfTitle').value = title;
+    document.getElementById('jfCat').value = cat;
+    document.getElementById('jfType').value = jtype;
+    document.getElementById('jfLoc').value = loc;
+    document.getElementById('jfSal').value = sal;
+    document.getElementById('jfDesc').value = desc;
+    document.getElementById('jfReqs').value = reqs;
+    openM('jobModal');
+}
+function openJobDel(id) { document.getElementById('delLink').href = '/job/' + id + '/delete'; openM('delModal'); }
+
+/* ─ Filter apps ─ */
+function fApps(s, btn) {
+    document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active')); btn.classList.add('active');
+    document.querySelectorAll('.app-card').forEach(c => { c.style.display = (s === 'all' || c.dataset.status === s) ? 'block' : 'none'; });
+}
+
+/* ─ Backdrop / ESC ─ */
+document.querySelectorAll('.modal-bd').forEach(bd => bd.addEventListener('click', e => { if (e.target === bd) closeM(bd.id); }));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-bd.open').forEach(bd => closeM(bd.id)); });
+</script>
 {% endblock %}

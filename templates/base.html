@@ -139,6 +139,7 @@
         {% if not session.user_id %}<a href="/" {% if request.endpoint=='index' %}class="active"{% endif %}><i class="fas fa-home"></i> الرئيسية</a>{% endif %}
         <a href="/jobs" {% if request.endpoint=='jobs' %}class="active"{% endif %}><i class="fas fa-briefcase"></i> الوظائف</a>
         <a href="/journalists" {% if request.endpoint=='journalists' %}class="active"{% endif %}><i class="fas fa-users"></i> الكوادر الإعلامية</a>
+        <a href="/channels" {% if request.endpoint=='channels' %}class="active"{% endif %}><i class="fas fa-tv"></i> القنوات</a>
         {% if session.user_id %}
         <a href="/profile/{{ session.user_id }}"><i class="fas fa-user"></i> {{ session.user_name }}</a>
         <a href="/logout" class="btn btn-outline btn-sm"><i class="fas fa-sign-out-alt"></i> خروج</a>

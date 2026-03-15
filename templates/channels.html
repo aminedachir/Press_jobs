@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}القنوات الإعلامية - PressJobs{% endblock %}
+{% block extra_css %}
+<style>
+.page-header { background: var(--dark2); border-bottom: 1px solid var(--border); padding: 3rem 2rem 2rem; }
+.page-header h1 { font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem; }
+.page-header p { color: var(--text-muted); }
+.channels-layout { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
+.search-bar { display: flex; gap: 0.7rem; margin-bottom: 2.5rem; }
+.search-bar input { flex: 1; padding: 0.85rem 1.1rem; background: rgba(255,255,255,0.05); border: 1.5px solid var(--border); border-radius: 12px; color: var(--text); font-family: inherit; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+.search-bar input:focus { border-color: var(--orange); }
+.channels-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+.channel-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 18px; overflow: hidden; text-decoration: none; color: inherit;
+    transition: all 0.3s; display: flex; flex-direction: column;
+}
+.channel-card:hover { transform: translateY(-5px); border-color: rgba(244,117,32,0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+.channel-card-banner {
+    height: 90px; position: relative;
+    background: linear-gradient(135deg, #0f1e45 0%, #1a3a8f 50%, #0f1e45 100%);
+}
+.channel-card-banner::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 100% at 50% 50%, rgba(244,117,32,0.1) 0%, transparent 70%);
+}
+.channel-logo {
+    position: absolute; bottom: -28px; right: 1.5rem;
+    width: 60px; height: 60px; border-radius: 14px;
+    background: var(--dark2); border: 3px solid var(--card-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; color: var(--orange); overflow: hidden; z-index: 2;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+.channel-logo img { width: 100%; height: 100%; object-fit: cover; }
+.channel-card-body { padding: 2.5rem 1.5rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
+.channel-name { font-size: 1.1rem; font-weight: 900; margin-bottom: 0.3rem; }
+.channel-location { color: var(--text-muted); font-size: 0.82rem; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.9rem; }
+.channel-bio { color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; margin-bottom: 1.2rem; }
+.channel-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 1rem; border-top: 1px solid var(--border); }
+.channel-jobs-count { font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem; }
+.channel-jobs-count strong { color: var(--orange); font-size: 1rem; }
+.empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
+.empty-state i { font-size: 4rem; opacity: 0.12; display: block; margin-bottom: 1rem; }
+@media(max-width:640px) { .channels-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div style="max-width:1200px;margin:0 auto">
+        <h1><i class="fas fa-tv" style="color:var(--orange)"></i> القنوات الإعلامية</h1>
+        <p>تصفح جميع القنوات والمواقع الإخبارية المسجلة في المنصة</p>
+    </div>
+</div>
+
+<div class="channels-layout">
+    <form class="search-bar" method="get">
+        <input type="text" name="search" value="{{ search }}" placeholder="ابحث باسم القناة أو الموقع...">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> بحث</button>
+    </form>
+
+    {% if channels %}
+    <p style="color:var(--text-muted);margin-bottom:1.5rem;font-size:0.9rem">{{ channels|length }} قناة مسجلة</p>
+    <div class="channels-grid">
+        {% for ch in channels %}
+        <a href="/profile/{{ ch.id }}" class="channel-card">
+            <div class="channel-card-banner">
+                <div class="channel-logo">
+                    {% if ch.profile_image %}
+                        <img src="/static/uploads/{{ ch.profile_image }}" alt="{{ ch.name }}">
+                    {% else %}
+                        <i class="fas fa-tv"></i>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="channel-card-body">
+                <div class="channel-name">{{ ch.name }}</div>
+                {% if ch.location %}
+                <div class="channel-location"><i class="fas fa-map-marker-alt"></i> {{ ch.location }}</div>
+                {% endif %}
+                {% if ch.bio %}
+                <p class="channel-bio">{{ ch.bio }}</p>
+                {% else %}
+                <p class="channel-bio" style="font-style:italic;opacity:0.5;">لا توجد نبذة بعد</p>
+                {% endif %}
+                <div class="channel-footer">
+                    <div class="channel-jobs-count">
+                        <strong>{{ job_counts[ch.id] }}</strong>
+                        <span>وظيفة متاحة</span>
+                    </div>
+                    <span class="btn btn-primary btn-sm">عرض الملف</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-tv"></i>
+        <h3 style="margin-bottom:0.5rem">لا توجد قنوات</h3>
+        <p>{% if search %}لم يتم العثور على قنوات مطابقة لـ "{{ search }}"{% else %}لم تنضم أي قناة بعد{% endif %}</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
