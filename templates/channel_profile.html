@@ -4,6 +4,8 @@
 <style>
 /* ══ HERO ══ */
 .ch-hero { position:relative; height:300px; overflow:hidden; background:linear-gradient(135deg,#060d1f 0%,#0f1e45 50%,#060d1f 100%); }
+.ch-hero-cover { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; opacity:0.55; }
+.ch-cover-btn { position:absolute; top:1rem; left:1rem; z-index:4; display:flex; align-items:center; gap:0.4rem; padding:0.4rem 0.9rem; border-radius:8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.2); color:rgba(255,255,255,0.85); font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.2s; backdrop-filter:blur(6px); font-family:inherit; }
 .ch-hero-bg { position:absolute; inset:0; background: radial-gradient(ellipse 60% 80% at 20% 50%,rgba(26,58,143,0.3) 0%,transparent 65%), radial-gradient(ellipse 50% 70% at 85% 30%,rgba(244,117,32,0.18) 0%,transparent 65%); }
 .ch-hero-lines { position:absolute; inset:0; opacity:0.035; background-image: repeating-linear-gradient(0deg,transparent,transparent 44px,#fff 44px,#fff 45px), repeating-linear-gradient(90deg,transparent,transparent 44px,#fff 44px,#fff 45px); }
 .ch-hero-inner { position:relative; z-index:2; max-width:1200px; margin:0 auto; padding:2rem 2rem 0; display:flex; align-items:flex-end; gap:2rem; height:100%; }
@@ -175,6 +177,7 @@
       <div class="modal-tabs">
         <button class="mtab active" id="etab-info" onclick="switchMTab('info',this)"><i class="fas fa-info-circle"></i> المعلومات</button>
         <button class="mtab" id="etab-logo" onclick="switchMTab('logo',this)"><i class="fas fa-image"></i> الشعار</button>
+        <button class="mtab" id="etab-cover" onclick="switchMTab('cover',this)"><i class="fas fa-panorama"></i> الغلاف</button>
       </div>
       <div class="mpanel active" id="epanel-info">
         <form method="POST" action="/channel/{{ channel.id }}/update" id="infoForm">
@@ -190,6 +193,29 @@
             <div class="logo-thumb" id="logoThumb">{% if channel.profile_image %}<img src="/static/uploads/{{ channel.profile_image }}" id="logoImg">{% else %}<i class="fas fa-tv"></i>{% endif %}</div>
             <div class="logo-txt"><h4>{% if channel.profile_image %}تغيير الشعار{% else %}رفع الشعار{% endif %}</h4><p>JPG، PNG، WEBP</p><div class="logo-chosen" id="logoChosen"></div></div>
             <input type="file" name="profile_image" id="logoInput" accept="image/*">
+          </label>
+        </form>
+      </div>
+      <div class="mpanel" id="epanel-cover">
+        <form method="POST" action="/channel/{{ channel.id }}/upload-cover" enctype="multipart/form-data" id="coverForm">
+          <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:1rem">صورة عريضة للغلاف — يُنصح بأبعاد 1200×300 بكسل.</p>
+          {% if channel.cover_image %}
+          <div style="border-radius:10px;overflow:hidden;margin-bottom:1rem">
+            <img src="/static/uploads/{{ channel.cover_image }}" style="width:100%;height:110px;object-fit:cover" id="coverPreviewImg">
+          </div>
+          {% else %}
+          <div style="border-radius:10px;background:rgba(255,255,255,0.04);border:1px dashed var(--border);height:90px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;color:var(--text-muted);font-size:0.85rem">
+            <span><i class="fas fa-image" style="margin-left:0.4rem"></i>لا توجد صورة غلاف بعد</span>
+          </div>
+          {% endif %}
+          <label class="logo-zone" style="cursor:pointer">
+            <div class="logo-thumb" style="border-radius:10px"><i class="fas fa-panorama" style="color:var(--orange)"></i></div>
+            <div class="logo-txt">
+              <h4>{% if channel.cover_image %}تغيير الغلاف{% else %}رفع صورة الغلاف{% endif %}</h4>
+              <p>JPG، PNG، WEBP — عرض 1200px+</p>
+              <div class="logo-chosen" id="coverChosen"></div>
+            </div>
+            <input type="file" name="cover_image" id="coverInput" accept="image/*">
           </label>
         </form>
       </div>
@@ -240,8 +266,14 @@
 
 <!-- ══ HERO ══ -->
 <div class="ch-hero">
+  {% if channel.cover_image %}
+  <img src="/static/uploads/{{ channel.cover_image }}" class="ch-hero-cover" alt="غلاف {{ channel.name }}">
+  {% endif %}
   <div class="ch-hero-bg"></div>
   <div class="ch-hero-lines"></div>
+  {% if is_owner %}
+  <button class="ch-cover-btn" onclick="openM('editModal','cover')"><i class="fas fa-panorama"></i> {% if channel.cover_image %}تغيير الغلاف{% else %}إضافة غلاف{% endif %}</button>
+  {% endif %}
   <div class="ch-hero-inner">
     <div class="ch-logo{% if is_owner %} editable{% endif %}"{% if is_owner %} onclick="openM('editModal','logo')"{% endif %}>
       {% if channel.profile_image %}<img src="/static/uploads/{{ channel.profile_image }}" alt="{{ channel.name }}" id="heroLogo">{% else %}<i class="fas fa-tv default-icon"></i>{% endif %}
@@ -390,6 +422,7 @@
       <div class="ch-card-head"><i class="fas fa-cog"></i> إدارة القناة</div>
       <button onclick="openM('editModal','info')" class="ch-btn"><i class="fas fa-edit"></i> تعديل المعلومات</button>
       <button onclick="openM('editModal','logo')" class="ch-btn outline"><i class="fas fa-image"></i> تغيير الشعار</button>
+      <button onclick="openM('editModal','cover')" class="ch-btn outline"><i class="fas fa-panorama"></i> {% if channel.cover_image %}تغيير الغلاف{% else %}إضافة غلاف{% endif %}</button>
       <button onclick="openJobNew()" class="ch-btn outline"><i class="fas fa-plus"></i> نشر وظيفة جديدة</button>
     </div>
     {% elif session.user_id and session.account_type == 'journalist' %}
@@ -443,6 +476,9 @@ function submitEdit() {
     if (eMTab === 'logo') {
         if (!document.getElementById('logoInput').files.length) { alert('يرجى اختيار صورة'); return; }
         document.getElementById('logoForm').submit();
+    } else if (eMTab === 'cover') {
+        if (!document.getElementById('coverInput').files.length) { alert('يرجى اختيار صورة الغلاف'); return; }
+        document.getElementById('coverForm').submit();
     } else { document.getElementById('infoForm').submit(); }
 }
 /* Logo preview */
@@ -454,6 +490,24 @@ document.getElementById('logoInput') && document.getElementById('logoInput').add
     r.onload = e => {
         document.getElementById('logoThumb').innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
         const h = document.getElementById('heroLogo'); if (h) h.src = e.target.result;
+    };
+    r.readAsDataURL(f);
+});
+/* Cover preview */
+document.getElementById('coverInput') && document.getElementById('coverInput').addEventListener('change', function() {
+    const f = this.files[0]; if (!f) return;
+    document.getElementById('coverChosen').textContent = '✓ ' + f.name;
+    document.getElementById('coverChosen').style.display = 'block';
+    const r = new FileReader();
+    r.onload = e => {
+        const img = document.getElementById('coverPreviewImg');
+        if (img) { img.src = e.target.result; }
+        else {
+            const ph = document.querySelector('#epanel-cover [style*="dashed"]');
+            if (ph) { ph.innerHTML = `<img src="${e.target.result}" style="width:100%;height:90px;object-fit:cover;border-radius:10px">`; }
+        }
+        const heroCover = document.querySelector('.ch-hero-cover');
+        if (heroCover) { heroCover.src = e.target.result; }
     };
     r.readAsDataURL(f);
 });

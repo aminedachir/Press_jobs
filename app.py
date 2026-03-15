@@ -107,6 +107,7 @@ def migrate_db():
         ("intro_video",        "TEXT"),
         ("article_links",      "TEXT"),
         ("channel_type",       "TEXT"),   # NEW: قناة اعلامية / موقع اخباري / جريدة الكترونية
+        ("cover_image",        "TEXT"),   # NEW: channel cover/banner image
     ]
     for col, coltype in new_cols:
         if col not in existing:
@@ -517,6 +518,36 @@ def upload_channel_picture(channel_id):
     conn.commit()
     conn.close()
     flash('تم تحديث شعار القناة بنجاح!', 'success')
+    return redirect(url_for('profile', user_id=channel_id))
+
+@app.route('/channel/<int:channel_id>/upload-cover', methods=['POST'])
+def upload_channel_cover(channel_id):
+    if 'user_id' not in session or session['user_id'] != channel_id:
+        return redirect(url_for('login'))
+    if 'cover_image' not in request.files:
+        flash('لم يتم اختيار أي صورة', 'error')
+        return redirect(url_for('profile', user_id=channel_id))
+    file = request.files['cover_image']
+    if not file or not file.filename:
+        flash('لم يتم اختيار أي صورة', 'error')
+        return redirect(url_for('profile', user_id=channel_id))
+    IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif'}
+    ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+    if ext not in IMAGE_EXT:
+        flash('صيغة الصورة غير مدعومة', 'error')
+        return redirect(url_for('profile', user_id=channel_id))
+    conn = get_db()
+    old = conn.execute('SELECT cover_image FROM users WHERE id=?', (channel_id,)).fetchone()
+    if old and old['cover_image']:
+        old_path = os.path.join(UPLOAD_FOLDER, old['cover_image'])
+        if os.path.exists(old_path):
+            os.remove(old_path)
+    unique_name = f"cover_{channel_id}_{int(datetime.utcnow().timestamp())}{ext}"
+    file.save(os.path.join(UPLOAD_FOLDER, unique_name))
+    conn.execute('UPDATE users SET cover_image=? WHERE id=?', (unique_name, channel_id))
+    conn.commit()
+    conn.close()
+    flash('تم تحديث صورة الغلاف بنجاح!', 'success')
     return redirect(url_for('profile', user_id=channel_id))
 
 @app.route('/channels')
