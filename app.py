@@ -4,6 +4,8 @@ from werkzeug.utils import secure_filename
 import sqlite3
 import os
 import subprocess
+import threading
+import uuid
 from datetime import datetime
 
 app = Flask(__name__)
@@ -12,6 +14,10 @@ app.secret_key = 'pressjobs_secret_2024'
 DB_PATH = 'pressjobs.db'
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# In-memory tracker for background-processing tasks
+_bg_jobs      = {}
+_bg_jobs_lock = threading.Lock()
 
 def convert_to_mp4(src_path):
     base = os.path.splitext(src_path)[0]
@@ -446,7 +452,16 @@ def create_post(user_id):
     VIDEO_EXT = {'.mp4','.webm','.mov','.avi','.mkv','.flv','.wmv','.m4v','.3gp','.ogv','.ts','.mts','.m2ts'}
     IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif','.svg'}
 
-    if 'media' in request.files:
+    # If journalist used studio BG replacement, use the already-processed file
+    processed_video = request.form.get('processed_video', '').strip()
+    if processed_video:
+        safe_name = secure_filename(processed_video)
+        if os.path.exists(os.path.join(UPLOAD_FOLDER, safe_name)):
+            media_filename = safe_name
+            media_type     = 'video'
+
+    # Otherwise normal upload
+    if not media_filename and 'media' in request.files:
         file = request.files['media']
         if file and file.filename:
             filename    = secure_filename(file.filename)
@@ -804,6 +819,216 @@ def admin_delete_job(job_id):
 def admin_logout():
     session.clear()
     return redirect(url_for('admin_login'))
+
+
+# ── Studio background replacement ────────────────────────────────────────────
+
+@app.route('/profile/<int:user_id>/process-intro-bg', methods=['POST'])
+def process_intro_bg(user_id):
+    """Start BG replacement for the intro video (edit-profile tab)."""
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return jsonify({'error': 'غير مصرح'}), 401
+    return _handle_process_bg()
+
+
+@app.route('/profile/<int:user_id>/confirm-intro-bg', methods=['POST'])
+def confirm_intro_bg(user_id):
+    """After processing is done, save the result as the user's intro_video."""
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return jsonify({'error': 'غير مصرح'}), 401
+
+    filename = request.json.get('filename', '').strip()
+    if not filename:
+        return jsonify({'error': 'اسم الملف مفقود'}), 400
+
+    safe = secure_filename(filename)
+    if not os.path.exists(os.path.join(UPLOAD_FOLDER, safe)):
+        return jsonify({'error': 'الملف المعالج غير موجود'}), 404
+
+    conn = get_db()
+    old = conn.execute('SELECT intro_video FROM users WHERE id=?', (user_id,)).fetchone()
+    if old and old['intro_video']:
+        old_path = os.path.join(UPLOAD_FOLDER, old['intro_video'])
+        if os.path.exists(old_path):
+            try: os.remove(old_path)
+            except Exception: pass
+    conn.execute('UPDATE users SET intro_video=? WHERE id=?', (safe, user_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'filename': safe})
+
+
+@app.route('/api/process-bg', methods=['POST'])
+def api_process_bg():
+    """Start BG replacement for a post video."""
+    if 'user_id' not in session:
+        return jsonify({'error': 'غير مصرح'}), 401
+    return _handle_process_bg()
+
+
+def _handle_process_bg():
+    """
+    Shared logic: receive video + studio_image, launch thread, return task_id.
+    """
+    user_id   = session['user_id']
+    IMAGE_EXT = {'.jpg', '.jpeg', '.png', '.webp'}
+    ALL_VIDEO = {'.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.m4v', '.3gp', '.ogv'}
+
+    studio_file = request.files.get('studio_image')
+    if not studio_file or not studio_file.filename:
+        return jsonify({'error': 'الرجاء رفع صورة الخلفية'}), 400
+    sext = os.path.splitext(secure_filename(studio_file.filename))[1].lower()
+    if sext not in IMAGE_EXT:
+        return jsonify({'error': 'صيغة صورة الخلفية غير مدعومة (JPG/PNG/WebP فقط)'}), 400
+
+    ts          = int(datetime.utcnow().timestamp())
+    studio_name = f"studio_tmp_{user_id}_{ts}{sext}"
+    studio_path = os.path.join(UPLOAD_FOLDER, studio_name)
+    studio_file.save(studio_path)
+
+    video_file = request.files.get('video')
+    if not video_file or not video_file.filename:
+        return jsonify({'error': 'الرجاء اختيار فيديو'}), 400
+    vext = os.path.splitext(secure_filename(video_file.filename))[1].lower()
+    if vext not in ALL_VIDEO:
+        return jsonify({'error': 'صيغة الفيديو غير مدعومة'}), 400
+
+    task_id      = str(uuid.uuid4())
+    fg_filename  = f"fg_{user_id}_{ts}{vext}"
+    out_filename = f"bgout_{user_id}_{ts}.mp4"
+    fg_path      = os.path.join(UPLOAD_FOLDER, fg_filename)
+    out_path     = os.path.join(UPLOAD_FOLDER, out_filename)
+    video_file.save(fg_path)
+
+    with _bg_jobs_lock:
+        _bg_jobs[task_id] = {
+            'status':     'queued',
+            'progress':   0,
+            'result':     None,
+            'fg':         fg_filename,
+            'studio_tmp': studio_name,
+        }
+
+    threading.Thread(
+        target=_run_bg_replacement,
+        args=(task_id, fg_path, studio_path, out_path),
+        daemon=True
+    ).start()
+    return jsonify({'task_id': task_id})
+
+
+@app.route('/api/process-bg/status/<task_id>')
+def api_process_bg_status(task_id):
+    """Poll processing status."""
+    with _bg_jobs_lock:
+        job = dict(_bg_jobs.get(task_id, {}))
+    if not job:
+        return jsonify({'error': 'مهمة غير موجودة'}), 404
+    return jsonify(job)
+
+
+def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
+    """
+    MediaPipe selfie segmentation background replacement.
+
+    Correct blending in float32 [0-1]:
+        output = fg * mask + bg * (1 - mask)
+
+    Converting to float32 before multiplying avoids uint8 overflow.
+    Audio is restored from the original via ffmpeg.
+    """
+    try:
+        with _bg_jobs_lock:
+            _bg_jobs[task_id]['status'] = 'processing'
+
+        import cv2
+        import numpy as np
+        import mediapipe as mp
+
+        fg_cap = cv2.VideoCapture(fg_path)
+        if not fg_cap.isOpened():
+            raise RuntimeError(f"Cannot open video: {fg_path}")
+
+        total_frames = int(fg_cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
+        width        = int(fg_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height       = int(fg_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps          = fg_cap.get(cv2.CAP_PROP_FPS) or 25.0
+
+        bg_img = cv2.imread(studio_path)
+        if bg_img is None:
+            raise FileNotFoundError(f"Studio image not found: {studio_path}")
+        bg_img = cv2.resize(bg_img, (width, height))
+        bg_f32 = bg_img.astype(np.float32) / 255.0
+
+        raw_path = output_path.replace('.mp4', '_raw.mp4')
+        writer   = cv2.VideoWriter(raw_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+        if not writer.isOpened():
+            raise RuntimeError("VideoWriter could not be opened")
+
+        segmenter = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
+
+        frame_idx = 0
+        while True:
+            ret, frame = fg_cap.read()
+            if not ret:
+                break
+            rgb      = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mask     = segmenter.process(rgb).segmentation_mask
+            mask     = cv2.GaussianBlur(mask, (21, 21), 0)
+            mask_3ch = np.stack([mask] * 3, axis=-1)
+            fg_f32   = frame.astype(np.float32) / 255.0
+            blended  = fg_f32 * mask_3ch + bg_f32 * (1.0 - mask_3ch)
+            writer.write(np.clip(blended * 255.0, 0, 255).astype(np.uint8))
+            frame_idx += 1
+            with _bg_jobs_lock:
+                _bg_jobs[task_id]['progress'] = min(88, int(frame_idx / total_frames * 88))
+
+        fg_cap.release()
+        writer.release()
+        segmenter.close()
+
+        with _bg_jobs_lock:
+            _bg_jobs[task_id]['progress'] = 90
+
+        result = subprocess.run([
+            'ffmpeg', '-y',
+            '-i', raw_path,
+            '-i', fg_path,
+            '-map', '0:v:0',
+            '-map', '1:a?',
+            '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+            '-c:a', 'aac', '-b:a', '128k',
+            '-movflags', '+faststart',
+            output_path
+        ], capture_output=True, timeout=600)
+
+        if os.path.exists(raw_path):
+            os.remove(raw_path)
+
+        if result.returncode != 0:
+            raise RuntimeError(f"ffmpeg error: {result.stderr.decode()}")
+
+        with _bg_jobs_lock:
+            _bg_jobs[task_id]['status']   = 'done'
+            _bg_jobs[task_id]['progress'] = 100
+            _bg_jobs[task_id]['result']   = os.path.basename(output_path)
+
+    except Exception as e:
+        for p in [output_path, output_path.replace('.mp4', '_raw.mp4')]:
+            if os.path.exists(p):
+                try: os.remove(p)
+                except Exception: pass
+        with _bg_jobs_lock:
+            _bg_jobs[task_id]['status'] = 'error'
+            _bg_jobs[task_id]['error']  = str(e)
+    finally:
+        with _bg_jobs_lock:
+            studio_tmp = _bg_jobs.get(task_id, {}).get('studio_tmp')
+        if studio_tmp:
+            p = os.path.join(UPLOAD_FOLDER, studio_tmp)
+            if os.path.exists(p):
+                try: os.remove(p)
+                except Exception: pass
 
 
 if __name__ == '__main__':

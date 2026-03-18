@@ -535,8 +535,8 @@
                                 <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" alt="{{ post.title or 'صورة' }}" loading="lazy" />
                                 <span class="media-type-badge"><i class="fas fa-image"></i></span>
                             {% elif post.media_type == 'video' %}
-                                <video muted preload="none" style="pointer-events:none;">
-                                    <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" type="video/mp4">
+                                <video muted preload="metadata" style="pointer-events:none;">
+                                    <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}#t=0.1" type="video/mp4">
                                 </video>
                                 <span class="media-type-badge"><i class="fas fa-play"></i> فيديو</span>
                             {% else %}
@@ -597,7 +597,10 @@
 
                 <!-- Media form -->
                 <div id="ptype-media">
-                    <form method="POST" action="/profile/{{ user.id }}/post" enctype="multipart/form-data">
+                    <!-- Hidden processed-video path set after BG replacement -->
+                    <input type="hidden" id="processed-video-path" name="_processed_video" value="" />
+
+                    <form method="POST" action="/profile/{{ user.id }}/post" enctype="multipart/form-data" id="post-media-form">
                         <div style="display:grid;gap:1rem;">
                             <div>
                                 <label class="section-title-sm" style="font-size:0.82rem">العنوان <span style="opacity:0.5;font-weight:400">(اختياري)</span></label>
@@ -618,9 +621,74 @@
                                 </div>
                                 <div id="media-preview" style="margin-top:0.8rem;display:none;"></div>
                             </div>
+
+                            <!-- ══ Studio Background Panel (journalists, video only) ══ -->
+                            {% if user.account_type == 'journalist' %}
+                            <div id="studio-bg-panel" style="display:none;">
+                                <div style="border:1.5px solid rgba(244,117,32,0.3);border-radius:14px;padding:1.2rem;background:rgba(244,117,32,0.04);">
+                                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem;">
+                                        <span class="section-title-sm" style="margin-bottom:0;font-size:0.88rem;">
+                                            <i class="fas fa-tv"></i> تغيير خلفية الفيديو باستوديو
+                                        </span>
+                                        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--text-muted);">
+                                            <input type="checkbox" id="enable-studio-bg" style="accent-color:var(--orange);width:15px;height:15px;" />
+                                            تفعيل
+                                        </label>
+                                    </div>
+
+                                    <div id="studio-bg-options" style="display:none;">
+                                        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.7rem;">ارفع صورة الاستوديو الذي تريد استخدامه كخلفية:</p>
+
+                                        <!-- Studio image upload button -->
+                                        <label id="pub-studio-upload-label" style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 1rem;border:1.5px dashed var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02);">
+                                            <input type="file" id="pub-studio-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                                            <span id="pub-studio-icon" style="width:44px;height:44px;border-radius:10px;background:rgba(244,117,32,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                <i class="fas fa-image" style="color:var(--orange);font-size:1.2rem;"></i>
+                                            </span>
+                                            <span id="pub-studio-thumb-wrap" style="display:none;flex-shrink:0;">
+                                                <img id="pub-studio-thumb" style="width:44px;height:44px;border-radius:10px;object-fit:cover;" />
+                                            </span>
+                                            <div style="flex:1;min-width:0;">
+                                                <div id="pub-studio-label-text" style="font-size:0.85rem;font-weight:700;color:var(--text);">اختر صورة الخلفية</div>
+                                                <div id="pub-studio-label-hint" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.15rem;">JPG / PNG / WebP</div>
+                                            </div>
+                                            <i class="fas fa-upload" style="color:var(--text-muted);font-size:0.9rem;flex-shrink:0;"></i>
+                                        </label>
+
+                                        <!-- Process button -->
+                                        <button type="button" id="btn-process-bg" class="btn btn-primary"
+                                                style="width:100%;margin-top:0.8rem;opacity:0.4;pointer-events:none;">
+                                            <i class="fas fa-magic"></i> تطبيق خلفية الاستوديو
+                                        </button>
+
+                                        <!-- Progress bar -->
+                                        <div id="bg-progress-wrap" style="display:none;margin-top:0.9rem;">
+                                            <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-bottom:0.3rem;">
+                                                <span id="bg-status-text">جاري المعالجة...</span>
+                                                <span id="bg-pct">0%</span>
+                                            </div>
+                                            <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:8px;overflow:hidden;">
+                                                <div id="bg-progress-bar" style="height:100%;background:var(--gradient-blue);border-radius:20px;width:0%;transition:width 0.4s;"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Processed video preview -->
+                                        <div id="bg-result-wrap" style="display:none;margin-top:1rem;">
+                                            <p style="font-size:0.8rem;color:#4caf50;font-weight:700;margin-bottom:0.5rem;">
+                                                <i class="fas fa-check-circle"></i> تمت المعالجة — سيُرفع الفيديو المعالج عند النشر
+                                            </p>
+                                            <video id="bg-result-video" controls style="width:100%;border-radius:10px;max-height:220px;"></video>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+
                         </div>
                         <div style="margin-top:1.2rem;text-align:left">
-                            <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> نشر</button>
+                            <button class="btn btn-primary" type="submit" id="btn-post-submit">
+                                <i class="fas fa-paper-plane"></i> نشر
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -794,15 +862,17 @@
                     <div style="grid-column:span 2;">
                         <label class="field-label"><i class="fas fa-video"></i> فيديو تقديم الأخبار</label>
                         {% if user.intro_video %}
-                        <div class="file-exists-row">
+                        <div class="file-exists-row" id="intro-exists-row">
                             <i class="fas fa-check-circle" style="color:#4caf50"></i>
                             <span>تم رفع فيديو التقديم</span>
                             <a href="{{ url_for('static', filename='uploads/' + user.intro_video) }}" target="_blank" class="file-view-btn">
                                 <i class="fas fa-play"></i> مشاهدة
                             </a>
                         </div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;">لتغيير الفيديو اختر ملفاً جديداً</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;" id="intro-replace-hint">لتغيير الفيديو اختر ملفاً جديداً</div>
                         {% endif %}
+
+                        <!-- Upload zone (raw video) -->
                         <div class="upload-zone" id="introv-zone">
                             <input type="file" name="intro_video" id="introv-input" accept="video/*" />
                             <i class="fas fa-film"></i>
@@ -810,6 +880,69 @@
                             <div class="hint">MP4، WEBM، MOV — بحد أقصى 200 ميغابايت</div>
                             <div id="introv-name" style="margin-top:0.5rem;font-size:0.8rem;color:var(--orange);display:none;"></div>
                         </div>
+
+                        <!-- Hidden field: if user processed the intro video with BG replacement -->
+                        <input type="hidden" name="processed_intro_video" id="processed-intro-video-field" value="" />
+
+                        <!-- Studio BG panel for intro video -->
+                        <div id="intro-studio-panel" style="display:none;margin-top:1rem;">
+                            <div style="border:1.5px solid rgba(244,117,32,0.3);border-radius:14px;padding:1.2rem;background:rgba(244,117,32,0.04);">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem;">
+                                    <span class="section-title-sm" style="margin-bottom:0;font-size:0.88rem;">
+                                        <i class="fas fa-tv"></i> تغيير خلفية الفيديو باستوديو
+                                    </span>
+                                    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--text-muted);">
+                                        <input type="checkbox" id="enable-intro-studio-bg" style="accent-color:var(--orange);width:15px;height:15px;" />
+                                        تفعيل
+                                    </label>
+                                </div>
+                                <div id="intro-studio-options" style="display:none;">
+                                    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.7rem;">ارفع صورة الاستوديو الذي تريد استخدامه كخلفية:</p>
+
+                                    <!-- Studio image upload button -->
+                                    <label id="intro-studio-upload-label" style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 1rem;border:1.5px dashed var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02);">
+                                        <input type="file" id="intro-studio-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                                        <span id="intro-studio-icon" style="width:44px;height:44px;border-radius:10px;background:rgba(244,117,32,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                            <i class="fas fa-image" style="color:var(--orange);font-size:1.2rem;"></i>
+                                        </span>
+                                        <span id="intro-studio-thumb-wrap" style="display:none;flex-shrink:0;">
+                                            <img id="intro-studio-thumb" style="width:44px;height:44px;border-radius:10px;object-fit:cover;" />
+                                        </span>
+                                        <div style="flex:1;min-width:0;">
+                                            <div id="intro-studio-label-text" style="font-size:0.85rem;font-weight:700;color:var(--text);">اختر صورة الخلفية</div>
+                                            <div id="intro-studio-label-hint" style="font-size:0.75rem;color:var(--text-muted);margin-top:0.15rem;">JPG / PNG / WebP</div>
+                                        </div>
+                                        <i class="fas fa-upload" style="color:var(--text-muted);font-size:0.9rem;flex-shrink:0;"></i>
+                                    </label>
+
+                                    <!-- Process button -->
+                                    <button type="button" id="btn-intro-process-bg" class="btn btn-primary"
+                                            style="width:100%;margin-top:0.8rem;opacity:0.4;pointer-events:none;">
+                                        <i class="fas fa-magic"></i> تطبيق خلفية الاستوديو على الفيديو
+                                    </button>
+
+                                    <!-- Progress bar -->
+                                    <div id="intro-bg-progress-wrap" style="display:none;margin-top:0.9rem;">
+                                        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-bottom:0.3rem;">
+                                            <span id="intro-bg-status-text">جاري المعالجة...</span>
+                                            <span id="intro-bg-pct">0%</span>
+                                        </div>
+                                        <div style="background:rgba(255,255,255,0.08);border-radius:20px;height:8px;overflow:hidden;">
+                                            <div id="intro-bg-progress-bar" style="height:100%;background:var(--gradient-blue);border-radius:20px;width:0%;transition:width 0.4s;"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Result -->
+                                    <div id="intro-bg-result-wrap" style="display:none;margin-top:1rem;">
+                                        <p style="font-size:0.8rem;color:#4caf50;font-weight:700;margin-bottom:0.5rem;">
+                                            <i class="fas fa-check-circle"></i> تمت المعالجة — سيُحفظ هذا الفيديو كفيديو تقديمك عند الحفظ
+                                        </p>
+                                        <video id="intro-bg-result-video" controls style="width:100%;border-radius:10px;max-height:220px;"></video>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                 </div>
@@ -898,8 +1031,8 @@
                                 <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" alt="{{ post.title or 'صورة' }}" loading="lazy" />
                                 <span class="media-type-badge"><i class="fas fa-image"></i></span>
                             {% elif post.media_type == 'video' %}
-                                <video muted preload="none" style="pointer-events:none;">
-                                    <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" type="video/mp4">
+                                <video muted preload="metadata" style="pointer-events:none;">
+                                    <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}#t=0.1" type="video/mp4">
                                 </video>
                                 <span class="media-type-badge"><i class="fas fa-play"></i> فيديو</span>
                             {% endif %}
@@ -1190,11 +1323,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 img.src = url;
                 img.style.cssText = 'max-width:100%;border-radius:10px;max-height:280px;object-fit:contain;';
                 preview.appendChild(img);
+                // Hide studio panel for images
+                const sp = document.getElementById('studio-bg-panel');
+                if (sp) sp.style.display = 'none';
             } else if (file.type.startsWith('video/')) {
                 const vid = document.createElement('video');
                 vid.src = url; vid.controls = true;
                 vid.style.cssText = 'max-width:100%;border-radius:10px;max-height:280px;';
                 preview.appendChild(vid);
+                // Show studio panel for journalists
+                const sp = document.getElementById('studio-bg-panel');
+                if (sp) {
+                    sp.style.display = 'block';
+                    window.getVideoFile = getPubVideoFile;
+                    if (pubPanel) pubPanel.updateBtn();
+                }
             }
         });
     }
@@ -1244,6 +1387,279 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
     lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+    /* ════════════════════════════════════════════════════════════════
+       Studio Background Replacement
+       — user uploads their own studio image, no preset folder needed
+    ════════════════════════════════════════════════════════════════ */
+
+    /**
+     * Wire up one studio-bg panel.
+     * @param cfg.getVideoFile   fn() → File|null
+     * @param cfg.enableCbId     checkbox to show/hide options
+     * @param cfg.optionsId      collapsible options div
+     * @param cfg.studioInputId  file input for studio image
+     * @param cfg.studioLabelId  the clickable label element
+     * @param cfg.studioThumbId  thumbnail <img>
+     * @param cfg.studioThumbWrapId
+     * @param cfg.studioIconId   icon span (hidden after pick)
+     * @param cfg.studioLabelTextId
+     * @param cfg.studioLabelHintId
+     * @param cfg.processBtnId
+     * @param cfg.progressWrapId / statusTextId / pctId / progressBarId
+     * @param cfg.resultWrapId / resultVideoId
+     * @param cfg.processUrl     POST endpoint
+     * @param cfg.onDone         fn(filename|null)
+     */
+    function makeStudioPanel(cfg) {
+        let studioFile = null;
+        let pollTimer  = null;
+
+        function canProcess() {
+            return !!(cfg.getVideoFile() && studioFile);
+        }
+
+        function updateBtn() {
+            const btn = document.getElementById(cfg.processBtnId);
+            if (!btn) return;
+            const ok = canProcess();
+            btn.style.opacity       = ok ? '1'    : '0.4';
+            btn.style.pointerEvents = ok ? 'auto' : 'none';
+        }
+
+        // ── Enable checkbox ────────────────────────────────────────────────
+        const cb = document.getElementById(cfg.enableCbId);
+        if (cb) {
+            cb.addEventListener('change', function () {
+                const opts = document.getElementById(cfg.optionsId);
+                if (opts) opts.style.display = this.checked ? 'block' : 'none';
+                if (!this.checked) {
+                    resetResult();
+                    cfg.onDone(null);
+                }
+            });
+        }
+
+        // ── Studio image file input ────────────────────────────────────────
+        const studioInput = document.getElementById(cfg.studioInputId);
+        const uploadLabel = document.getElementById(cfg.studioLabelId);
+
+        if (uploadLabel) {
+            uploadLabel.addEventListener('mouseenter', () => uploadLabel.style.borderColor = 'var(--orange)');
+            uploadLabel.addEventListener('mouseleave', () => uploadLabel.style.borderColor = 'var(--border)');
+        }
+
+        if (studioInput) {
+            studioInput.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                studioFile = file;
+
+                // Show thumbnail preview in the label
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const thumb     = document.getElementById(cfg.studioThumbId);
+                    const thumbWrap = document.getElementById(cfg.studioThumbWrapId);
+                    const icon      = document.getElementById(cfg.studioIconId);
+                    const labelTxt  = document.getElementById(cfg.studioLabelTextId);
+                    const labelHint = document.getElementById(cfg.studioLabelHintId);
+                    if (thumb)     { thumb.src = e.target.result; }
+                    if (thumbWrap) { thumbWrap.style.display = 'inline-block'; }
+                    if (icon)      { icon.style.display = 'none'; }
+                    if (labelTxt)  { labelTxt.textContent = '✓ ' + file.name; labelTxt.style.color = 'var(--orange)'; }
+                    if (labelHint) { labelHint.textContent = 'اضغط لتغيير الصورة'; }
+                };
+                reader.readAsDataURL(file);
+                updateBtn();
+            });
+        }
+
+        // ── Process button ─────────────────────────────────────────────────
+        const processBtn = document.getElementById(cfg.processBtnId);
+        if (processBtn) {
+            processBtn.addEventListener('click', function () {
+                const videoFile = cfg.getVideoFile();
+                if (!videoFile || !studioFile) return;
+
+                resetResult();
+                document.getElementById(cfg.progressWrapId).style.display = 'block';
+                setProgress(2, 'جاري رفع الملفات...');
+                processBtn.disabled = true;
+                processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
+
+                const fd = new FormData();
+                fd.append('video',        videoFile);
+                fd.append('studio_image', studioFile);
+
+                fetch(cfg.processUrl, { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) { showError(data.error); return; }
+                        setProgress(5, 'جاري معالجة الفيديو...');
+                        pollStatus(data.task_id);
+                    })
+                    .catch(() => showError('فشل الاتصال بالخادم'));
+            });
+        }
+
+        function pollStatus(taskId) {
+            pollTimer = setInterval(() => {
+                fetch('/api/process-bg/status/' + taskId)
+                    .then(r => r.json())
+                    .then(job => {
+                        setProgress(job.progress || 0, 'جاري معالجة الفيديو...');
+                        if (job.status === 'done') {
+                            clearInterval(pollTimer);
+                            setProgress(100, 'اكتملت المعالجة ✓');
+                            const rv = document.getElementById(cfg.resultVideoId);
+                            if (rv) rv.src = '/static/uploads/' + job.result;
+                            document.getElementById(cfg.resultWrapId).style.display = 'block';
+                            if (processBtn) {
+                                processBtn.disabled = false;
+                                processBtn.innerHTML = '<i class="fas fa-magic"></i> إعادة المعالجة';
+                            }
+                            cfg.onDone(job.result);
+                        } else if (job.status === 'error') {
+                            clearInterval(pollTimer);
+                            showError(job.error || 'حدث خطأ أثناء المعالجة');
+                        }
+                    })
+                    .catch(() => {});
+            }, 1500);
+        }
+
+        function setProgress(pct, text) {
+            const bar  = document.getElementById(cfg.progressBarId);
+            const pctEl = document.getElementById(cfg.pctId);
+            const txt  = document.getElementById(cfg.statusTextId);
+            if (bar)   { bar.style.width = pct + '%'; bar.style.background = ''; }
+            if (pctEl) pctEl.textContent = pct + '%';
+            if (txt)   txt.textContent   = text;
+        }
+
+        function showError(msg) {
+            clearInterval(pollTimer);
+            const bar = document.getElementById(cfg.progressBarId);
+            const txt = document.getElementById(cfg.statusTextId);
+            if (bar) { bar.style.width = '100%'; bar.style.background = '#f44336'; }
+            if (txt) txt.textContent = '⚠ ' + msg;
+            if (processBtn) {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '<i class="fas fa-magic"></i> إعادة المحاولة';
+            }
+        }
+
+        function resetResult() {
+            const rw = document.getElementById(cfg.resultWrapId);
+            const pw = document.getElementById(cfg.progressWrapId);
+            if (rw) rw.style.display = 'none';
+            if (pw) pw.style.display = 'none';
+        }
+
+        return { updateBtn };
+    }
+
+    /* ── PUBLISH panel ── */
+    {% if user.account_type == 'journalist' %}
+    let pubPanel = null;
+
+    pubPanel = makeStudioPanel({
+        getVideoFile:      () => mediaInput && mediaInput.files[0] ? mediaInput.files[0] : null,
+        enableCbId:        'enable-studio-bg',
+        optionsId:         'studio-bg-options',
+        studioInputId:     'pub-studio-input',
+        studioLabelId:     'pub-studio-upload-label',
+        studioThumbId:     'pub-studio-thumb',
+        studioThumbWrapId: 'pub-studio-thumb-wrap',
+        studioIconId:      'pub-studio-icon',
+        studioLabelTextId: 'pub-studio-label-text',
+        studioLabelHintId: 'pub-studio-label-hint',
+        processBtnId:      'btn-process-bg',
+        progressWrapId:    'bg-progress-wrap',
+        statusTextId:      'bg-status-text',
+        pctId:             'bg-pct',
+        progressBarId:     'bg-progress-bar',
+        resultWrapId:      'bg-result-wrap',
+        resultVideoId:     'bg-result-video',
+        processUrl:        '/api/process-bg',
+        onDone: (filename) => {
+            let h = document.getElementById('hidden-processed-video');
+            if (!h) {
+                h = document.createElement('input');
+                h.type = 'hidden'; h.name = 'processed_video'; h.id = 'hidden-processed-video';
+                document.getElementById('post-media-form').appendChild(h);
+            }
+            h.value = filename || '';
+        }
+    });
+
+    /* ── INTRO VIDEO panel ── */
+    const introPanel = makeStudioPanel({
+        getVideoFile:      () => { const el = document.getElementById('introv-input'); return el && el.files[0] ? el.files[0] : null; },
+        enableCbId:        'enable-intro-studio-bg',
+        optionsId:         'intro-studio-options',
+        studioInputId:     'intro-studio-input',
+        studioLabelId:     'intro-studio-upload-label',
+        studioThumbId:     'intro-studio-thumb',
+        studioThumbWrapId: 'intro-studio-thumb-wrap',
+        studioIconId:      'intro-studio-icon',
+        studioLabelTextId: 'intro-studio-label-text',
+        studioLabelHintId: 'intro-studio-label-hint',
+        processBtnId:      'btn-intro-process-bg',
+        progressWrapId:    'intro-bg-progress-wrap',
+        statusTextId:      'intro-bg-status-text',
+        pctId:             'intro-bg-pct',
+        progressBarId:     'intro-bg-progress-bar',
+        resultWrapId:      'intro-bg-result-wrap',
+        resultVideoId:     'intro-bg-result-video',
+        processUrl:        '/profile/{{ user.id }}/process-intro-bg',
+        onDone: (filename) => {
+            const field = document.getElementById('processed-intro-video-field');
+            if (field) field.value = filename || '';
+            if (filename) {
+                fetch('/profile/{{ user.id }}/confirm-intro-bg', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename })
+                }).then(r => r.json()).then(d => {
+                    if (d.ok) {
+                        const row  = document.getElementById('intro-exists-row');
+                        const hint = document.getElementById('intro-replace-hint');
+                        if (row)  { row.style.display = 'flex'; row.querySelector('span').textContent = 'تم حفظ الفيديو المعالج ✓'; }
+                        if (hint) hint.style.display = 'block';
+                    }
+                });
+            }
+        }
+    });
+
+    // Show intro studio panel when a video file is chosen in edit tab
+    const introvInput = document.getElementById('introv-input');
+    if (introvInput) {
+        introvInput.addEventListener('change', function () {
+            const panel = document.getElementById('intro-studio-panel');
+            if (panel && this.files[0]) {
+                panel.style.display = 'block';
+                if (introPanel) introPanel.updateBtn();
+            }
+        });
+    }
+
+    // Before the edit form submits: if BG replacement was done,
+    // disable the raw video input so update_profile doesn't re-upload it
+    const editForm = document.querySelector('#tab-edit form');
+    if (editForm) {
+        editForm.addEventListener('submit', function () {
+            const processedField = document.getElementById('processed-intro-video-field');
+            if (processedField && processedField.value) {
+                // BG replacement was confirmed — don't re-upload the raw file
+                const rawInput = document.getElementById('introv-input');
+                if (rawInput) rawInput.disabled = true;
+            }
+        });
+    }
+    {% endif %}
+
 });
 </script>
 {% endblock %}
