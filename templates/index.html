@@ -112,6 +112,18 @@
     .hero-visual { display: none; }
     .hero { padding: 3rem 1rem; min-height: auto; }
 }
+@media(max-width:480px) {
+    .hero h1 { font-size: 1.8rem; }
+    .hero p { font-size: 0.95rem; }
+    .hero-btns { flex-direction: column; }
+    .hero-btns .btn { justify-content: center; }
+    .hero-stats { gap: 1rem; }
+    .stat-num { font-size: 1.5rem; }
+    .cta-section { margin: 2rem 1rem; padding: 2.5rem 1rem; }
+    .cta-section h2 { font-size: 1.4rem; }
+    .cta-btns { flex-direction: column; align-items: center; }
+    .grid-3 .card.job-card { padding: 1rem; }
+}
 </style>
 {% endblock %}
 {% block content %}

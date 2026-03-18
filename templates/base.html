@@ -127,6 +127,14 @@
             .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr; }
             .section { padding: 3rem 1rem; }
         }
+        @media(max-width:480px) {
+            nav { padding: 0 1rem; }
+            .nav-brand img { height: 5rem; }
+            .nav-brand span { font-size: 1.1rem; }
+            .section-title { font-size: 1.5rem; }
+            .btn { padding: 0.5rem 1rem; font-size: 0.85rem; }
+            footer { padding: 2rem 1rem 1rem; }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
