@@ -159,7 +159,26 @@
 
 /* ══ RESPONSIVE ══ */
 @media(max-width:960px){.ch-body{grid-template-columns:1fr}.ch-sidebar-col{order:-1}.ch-hero{height:240px}.ch-logo{width:100px;height:100px}.ch-hero-text h1{font-size:1.6rem}}
-@media(max-width:640px){.ch-stats{grid-template-columns:1fr 1fr}.app-pills{grid-template-columns:1fr 1fr}.mgrid{grid-template-columns:1fr}.ch-edit-btn{left:1rem}}
+@media(max-width:640px){
+    .ch-stats{grid-template-columns:1fr 1fr}
+    .app-pills{grid-template-columns:1fr 1fr}
+    .mgrid{grid-template-columns:1fr}
+    .ch-edit-btn{left:1rem}
+    .ch-hero{height:200px}
+    .ch-hero-inner{padding:1rem 1rem 0;gap:1rem}
+    .ch-logo{width:80px;height:80px;border-radius:18px;margin-bottom:-36px}
+    .ch-hero-text h1{font-size:1.3rem}
+    .ch-body{padding:3.5rem 1rem 2rem}
+    .ch-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .ch-tab{white-space:nowrap;padding:0.65rem 0.9rem;font-size:0.82rem}
+    .job-row{flex-wrap:wrap}
+    .job-row-acts{width:100%;justify-content:flex-end}
+    .app-top{flex-direction:column}
+    .modal-body{padding:1.2rem}
+    .modal-hd{padding:1rem 1.2rem}
+    .modal-ft{padding:0.9rem 1.2rem}
+    .ch-cover-btn{top:0.5rem;left:0.5rem;font-size:0.72rem;padding:0.3rem 0.6rem}
+}
 </style>
 {% endblock %}
 {% block content %}

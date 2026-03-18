@@ -345,6 +345,21 @@
 .file-exists-row { display: flex; align-items: center; gap: 0.6rem; background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.25); border-radius: 10px; padding: 0.6rem 0.9rem; margin-bottom: 0.6rem; font-size: 0.85rem; }
 .file-view-btn { margin-right: auto; background: rgba(255,255,255,0.07); border: 1px solid var(--border); border-radius: 7px; padding: 0.25rem 0.7rem; font-size: 0.78rem; color: var(--text); text-decoration: none; transition: all 0.2s; }
 .file-view-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+/* ── Extra responsive ── */
+@media(max-width:760px) {
+    .profile-layout { padding: 1.5rem 1rem; }
+}
+@media(max-width:580px) {
+    .profile-tabs { gap: 0.3rem; }
+    .profile-tab { min-width: 70px; padding: 0.6rem 0.5rem; font-size: 0.78rem; }
+    .profile-section { padding: 1.1rem; }
+    .media-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .pub-info-label { min-width: 110px; font-size: 0.78rem; }
+    .pub-info-val { font-size: 0.82rem; }
+    .sidebar-stats { gap: 1rem; }
+    .stat-num { font-size: 1rem; }
+}
 </style>
 {% endblock %}
 
@@ -1659,7 +1674,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     {% endif %}
-    
 
 });
 </script>

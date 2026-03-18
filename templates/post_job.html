@@ -10,6 +10,12 @@
 .post-header p { color: var(--text-muted); margin-top: 0.5rem; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media(max-width:600px) { .form-row { grid-template-columns: 1fr; } }
+@media(max-width:480px) {
+    .post-layout { padding: 1.5rem 1rem; }
+    .post-card { padding: 1.5rem 1.2rem; border-radius: 16px; }
+    .post-header i { font-size: 2.2rem; }
+    .post-header h1 { font-size: 1.4rem; }
+}
 </style>
 {% endblock %}
 {% block content %}
