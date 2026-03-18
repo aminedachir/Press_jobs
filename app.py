@@ -9,11 +9,17 @@ import uuid
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'pressjobs_secret_2024'
+app.secret_key = os.environ.get('SECRET_KEY', 'pressjobs_secret_2024')
 
+# On Render, set DATA_DIR=/data (persistent disk mount point).
+# Locally it defaults to the project root.
 _DATA_DIR = os.environ.get('DATA_DIR', '.')
 DB_PATH = os.path.join(_DATA_DIR, 'pressjobs.db')
 UPLOAD_FOLDER = os.path.join(_DATA_DIR, 'uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Keep static/uploads folder for local dev compatibility
+os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
 
 # In-memory tracker for background-processing tasks
 _bg_jobs      = {}
@@ -125,6 +131,18 @@ def migrate_db():
     conn.close()
 
 migrate_db()
+
+from flask import send_from_directory
+
+@app.route('/static/uploads/<path:filename>')
+def uploaded_file(filename):
+    """Serve uploads from DATA_DIR (persistent disk on Render, or static/uploads locally)."""
+    # Try DATA_DIR/uploads first (Render persistent disk)
+    data_uploads = os.path.join(_DATA_DIR, 'uploads')
+    if os.path.exists(os.path.join(data_uploads, filename)):
+        return send_from_directory(data_uploads, filename)
+    # Fallback to static/uploads (local dev)
+    return send_from_directory(os.path.join('static', 'uploads'), filename)
 
 @app.route('/')
 def index():
