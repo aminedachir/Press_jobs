@@ -11,17 +11,13 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'pressjobs_secret_2024')
 
-# On Render, set DATA_DIR=/data (persistent disk mount point).
-# Locally it defaults to the project root.
 _DATA_DIR = os.environ.get('DATA_DIR', '.')
 DB_PATH = os.path.join(_DATA_DIR, 'pressjobs.db')
 UPLOAD_FOLDER = os.path.join(_DATA_DIR, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Keep static/uploads folder for local dev compatibility
 os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
 
-# In-memory tracker for background-processing tasks
 _bg_jobs      = {}
 _bg_jobs_lock = threading.Lock()
 
@@ -118,8 +114,8 @@ def migrate_db():
         ("cv_filename",        "TEXT"),
         ("intro_video",        "TEXT"),
         ("article_links",      "TEXT"),
-        ("channel_type",       "TEXT"),   # NEW: قناة اعلامية / موقع اخباري / جريدة الكترونية
-        ("cover_image",        "TEXT"),   # NEW: channel cover/banner image
+        ("channel_type",       "TEXT"),   
+        ("cover_image",        "TEXT"),   
     ]
     for col, coltype in new_cols:
         if col not in existing:
@@ -137,11 +133,11 @@ from flask import send_from_directory
 @app.route('/static/uploads/<path:filename>')
 def uploaded_file(filename):
     """Serve uploads from DATA_DIR (persistent disk on Render, or static/uploads locally)."""
-    # Try DATA_DIR/uploads first (Render persistent disk)
+    
     data_uploads = os.path.join(_DATA_DIR, 'uploads')
     if os.path.exists(os.path.join(data_uploads, filename)):
         return send_from_directory(data_uploads, filename)
-    # Fallback to static/uploads (local dev)
+   
     return send_from_directory(os.path.join('static', 'uploads'), filename)
 
 @app.route('/')
@@ -172,7 +168,7 @@ def register():
         bio          = request.form.get('bio', '')
         skills       = request.form.get('skills', '')
         education    = request.form.get('education', '')
-        channel_type = request.form.get('channel_type', '')   # NEW
+        channel_type = request.form.get('channel_type', '')   
         try:
             conn = get_db()
             conn.execute('''INSERT INTO users (name, email, password, account_type, location, bio, skills, education, channel_type)
@@ -470,7 +466,6 @@ def create_post(user_id):
     VIDEO_EXT = {'.mp4','.webm','.mov','.avi','.mkv','.flv','.wmv','.m4v','.3gp','.ogv','.ts','.mts','.m2ts'}
     IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif','.svg'}
 
-    # If journalist used studio BG replacement, use the already-processed file
     processed_video = request.form.get('processed_video', '').strip()
     if processed_video:
         safe_name = secure_filename(processed_video)
@@ -478,7 +473,6 @@ def create_post(user_id):
             media_filename = safe_name
             media_type     = 'video'
 
-    # Otherwise normal upload
     if not media_filename and 'media' in request.files:
         file = request.files['media']
         if file and file.filename:
@@ -587,7 +581,7 @@ def upload_channel_cover(channel_id):
 def channels():
     conn = get_db()
     search       = request.args.get('search', '')
-    channel_type = request.args.get('type', '')   # NEW
+    channel_type = request.args.get('type', '')  
     query  = "SELECT * FROM users WHERE account_type='channel'"
     params = []
     if channel_type:
@@ -636,7 +630,6 @@ def update_application(app_id, status):
     return redirect(url_for('profile', user_id=session['user_id']))
 
 
-# ── Admin helpers ────────────────────────────────────────────────────────────
 
 def migrate_admin():
     conn = get_db()
@@ -680,7 +673,7 @@ def admin_required(f):
     return decorated
 
 
-# ── Admin login ──────────────────────────────────────────────────────────────
+
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -702,7 +695,6 @@ def admin_login():
     return render_template('admin_login.html')
 
 
-# ── Admin dashboard ──────────────────────────────────────────────────────────
 
 @app.route('/admin')
 @admin_required
@@ -752,7 +744,6 @@ def admin_dashboard():
     )
 
 
-# ── Admin: delete journalist ─────────────────────────────────────────────────
 
 @app.route('/admin/delete/journalist/<int:user_id>', methods=['POST'])
 @admin_required
@@ -788,7 +779,6 @@ def admin_delete_journalist(user_id):
     return redirect(url_for('admin_dashboard') + '#journalists')
 
 
-# ── Admin: delete channel ────────────────────────────────────────────────────
 
 @app.route('/admin/delete/channel/<int:channel_id>', methods=['POST'])
 @admin_required
@@ -817,7 +807,6 @@ def admin_delete_channel(channel_id):
     return redirect(url_for('admin_dashboard') + '#channels')
 
 
-# ── Admin: delete any job ────────────────────────────────────────────────────
 
 @app.route('/admin/delete/job/<int:job_id>', methods=['POST'])
 @admin_required
@@ -831,7 +820,6 @@ def admin_delete_job(job_id):
     return redirect(url_for('admin_dashboard') + '#jobs')
 
 
-# ── Admin logout ─────────────────────────────────────────────────────────────
 
 @app.route('/admin/logout')
 def admin_logout():
@@ -839,7 +827,6 @@ def admin_logout():
     return redirect(url_for('admin_login'))
 
 
-# ── Studio background replacement ────────────────────────────────────────────
 
 @app.route('/profile/<int:user_id>/process-intro-bg', methods=['POST'])
 def process_intro_bg(user_id):

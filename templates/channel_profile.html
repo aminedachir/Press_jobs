@@ -188,7 +188,6 @@
 {% set imap = {'journalist':'newspaper','photographer':'camera','content':'play-circle','editor':'film','presenter':'microphone','reporter':'broadcast-tower'} %}
 
 {% if is_owner %}
-<!-- ══ MODAL: Edit Profile ══ -->
 <div class="modal-bd" id="editModal">
   <div class="modal-box">
     <div class="modal-hd"><h3><i class="fas fa-edit"></i> تعديل ملف القناة</h3><button class="mx" onclick="closeM('editModal')"><i class="fas fa-times"></i></button></div>
@@ -243,7 +242,6 @@
   </div>
 </div>
 
-<!-- ══ MODAL: Post / Edit Job ══ -->
 <div class="modal-bd" id="jobModal">
   <div class="modal-box">
     <div class="modal-hd"><h3 id="jobModalTitle"><i class="fas fa-plus-circle"></i> وظيفة جديدة</h3><button class="mx" onclick="closeM('jobModal')"><i class="fas fa-times"></i></button></div>
@@ -269,7 +267,6 @@
   </div>
 </div>
 
-<!-- ══ MODAL: Delete Confirm ══ -->
 <div class="modal-bd" id="delModal">
   <div class="modal-box sm">
     <div class="modal-hd"><h3><i class="fas fa-trash"></i> تأكيد الحذف</h3><button class="mx" onclick="closeM('delModal')"><i class="fas fa-times"></i></button></div>
@@ -283,7 +280,6 @@
 </div>
 {% endif %}
 
-<!-- ══ HERO ══ -->
 <div class="ch-hero">
   {% if channel.cover_image %}
   <img src="/static/uploads/{{ channel.cover_image }}" class="ch-hero-cover" alt="غلاف {{ channel.name }}">
@@ -311,11 +307,9 @@
   {% if is_owner %}<button class="ch-edit-btn" onclick="openM('editModal','info')"><i class="fas fa-pen"></i> تعديل المعلومات</button>{% endif %}
 </div>
 
-<!-- ══ BODY ══ -->
 <div class="ch-body">
   <div class="ch-main">
 
-    <!-- STATS -->
     <div class="ch-stats">
       <div class="ch-stat"><div class="n">{{ jobs|length }}</div><div class="l">وظيفة منشورة</div></div>
       <div class="ch-stat"><div class="n">{{ total_applications }}</div><div class="l">إجمالي الطلبات</div></div>
@@ -323,7 +317,6 @@
     </div>
 
     {% if is_owner %}
-    <!-- ══ OWNER: Dashboard tabs ══ -->
     <div class="ch-card" style="padding-bottom:0">
       <div class="ch-tabs">
         <button class="ch-tab active" onclick="switchTab('t-jobs',this)"><i class="fas fa-briefcase"></i> الوظائف {% if jobs %}<span class="ch-tab-badge">{{ jobs|length }}</span>{% endif %}</button>
@@ -332,7 +325,6 @@
       </div>
       <div class="ch-tab-panels">
 
-        <!-- TAB: Jobs -->
         <div class="ch-tab-panel active" id="t-jobs">
           <div style="display:flex;justify-content:flex-end;margin-bottom:1.2rem">
             <button onclick="openJobNew()" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> وظيفة جديدة</button>
@@ -362,7 +354,6 @@
           {% endif %}
         </div>
 
-        <!-- TAB: Applications -->
         <div class="ch-tab-panel" id="t-apps">
           {% if applications %}
           <div class="filter-pills">
@@ -404,7 +395,6 @@
           {% endif %}
         </div>
 
-        <!-- TAB: About -->
         <div class="ch-tab-panel" id="t-about">
           {% if channel.bio %}<p class="ch-bio">{{ channel.bio }}</p>{% else %}<p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">لم تتم إضافة نبذة. <a href="javascript:void(0)" onclick="openM('editModal','info')" style="color:var(--orange);text-decoration:none">أضف الآن ←</a></p>{% endif %}
         </div>
@@ -413,7 +403,6 @@
     </div>
 
     {% else %}
-    <!-- ══ PUBLIC view ══ -->
     <div class="ch-card">
       <div class="ch-card-head"><i class="fas fa-info-circle"></i> عن القناة</div>
       {% if channel.bio %}<p class="ch-bio">{{ channel.bio }}</p>{% else %}<p style="color:var(--text-muted);font-style:italic">لا توجد نبذة</p>{% endif %}
@@ -434,7 +423,6 @@
 
   </div>
 
-  <!-- ── SIDEBAR ── -->
   <div class="ch-sidebar-col">
     {% if is_owner %}
     <div class="ch-card">
@@ -476,7 +464,6 @@
 </div>
 
 <script>
-/* ─ Modal ─ */
 let eMTab = 'info';
 function openM(id, tab) {
     document.getElementById(id).classList.add('open');
@@ -500,7 +487,6 @@ function submitEdit() {
         document.getElementById('coverForm').submit();
     } else { document.getElementById('infoForm').submit(); }
 }
-/* Logo preview */
 document.getElementById('logoInput') && document.getElementById('logoInput').addEventListener('change', function() {
     const f = this.files[0]; if (!f) return;
     document.getElementById('logoChosen').textContent = '✓ ' + f.name;
@@ -512,7 +498,6 @@ document.getElementById('logoInput') && document.getElementById('logoInput').add
     };
     r.readAsDataURL(f);
 });
-/* Cover preview */
 document.getElementById('coverInput') && document.getElementById('coverInput').addEventListener('change', function() {
     const f = this.files[0]; if (!f) return;
     document.getElementById('coverChosen').textContent = '✓ ' + f.name;
@@ -531,7 +516,6 @@ document.getElementById('coverInput') && document.getElementById('coverInput').a
     r.readAsDataURL(f);
 });
 
-/* ─ Dashboard tabs ─ */
 function switchTab(id, btn) {
     document.querySelectorAll('.ch-tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.ch-tab').forEach(t => t.classList.remove('active'));
@@ -539,7 +523,6 @@ function switchTab(id, btn) {
     btn.classList.add('active');
 }
 
-/* ─ Job modal ─ */
 function openJobNew() {
     document.getElementById('jobModalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> نشر وظيفة جديدة';
     document.getElementById('jfSaveLbl').textContent = 'نشر الوظيفة';
@@ -565,13 +548,11 @@ function openJobEdit(id, title, cat, jtype, loc, sal, desc, reqs) {
 }
 function openJobDel(id) { document.getElementById('delLink').href = '/job/' + id + '/delete'; openM('delModal'); }
 
-/* ─ Filter apps ─ */
 function fApps(s, btn) {
     document.querySelectorAll('.fpill').forEach(p => p.classList.remove('active')); btn.classList.add('active');
     document.querySelectorAll('.app-card').forEach(c => { c.style.display = (s === 'all' || c.dataset.status === s) ? 'block' : 'none'; });
 }
 
-/* ─ Backdrop / ESC ─ */
 document.querySelectorAll('.modal-bd').forEach(bd => bd.addEventListener('click', e => { if (e.target === bd) closeM(bd.id); }));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-bd.open').forEach(bd => closeM(bd.id)); });
 </script>

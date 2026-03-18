@@ -4,7 +4,6 @@
 <style>
 .dash-layout { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; }
 
-/* HEADER */
 .dash-header {
     background: linear-gradient(135deg, rgba(26,58,143,0.25), rgba(244,117,32,0.1));
     border: 1px solid var(--border); border-radius: 20px;
@@ -23,7 +22,6 @@
 .dash-info p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.3rem; }
 .dash-header-actions { margin-right: auto; display: flex; gap: 0.7rem; flex-wrap: wrap; }
 
-/* STATS */
 .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
 .stat-card {
     background: var(--card-bg); border: 1px solid var(--border);
@@ -34,7 +32,6 @@
 .stat-card .num { font-size: 2.2rem; font-weight: 900; background: var(--gradient-orange); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .stat-card .lbl { color: var(--text-muted); font-size: 0.82rem; margin-top: 0.3rem; }
 
-/* TABS */
 .dash-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding-bottom: 0; }
 .dash-tab {
     padding: 0.75rem 1.3rem; border-radius: 10px 10px 0 0;
@@ -48,7 +45,6 @@
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* JOB ITEMS */
 .job-item {
     background: var(--card-bg); border: 1px solid var(--border);
     border-radius: 12px; padding: 1.2rem 1.5rem; margin-bottom: 0.8rem;
@@ -60,7 +56,6 @@
 .job-item-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; align-items: center; }
 .job-item-actions { display: flex; gap: 0.5rem; }
 
-/* APPLICATION CARDS */
 .app-card {
     background: var(--card-bg); border: 1px solid var(--border);
     border-radius: 14px; padding: 1.5rem; margin-bottom: 1rem;
@@ -135,7 +130,6 @@
 {% block content %}
 <div class="dash-layout">
 
-    <!-- HEADER -->
     <div class="dash-header">
         <div class="dash-avatar">
             {% if user.profile_image %}
@@ -157,7 +151,6 @@
         </div>
     </div>
 
-    <!-- STATS -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="num">{{ jobs|length }}</div>
@@ -177,13 +170,11 @@
         </div>
     </div>
 
-    <!-- TABS -->
     <div class="dash-tabs">
         <button class="dash-tab active" onclick="showTab('apps', this)"><i class="fas fa-inbox"></i> طلبات التقديم</button>
         <button class="dash-tab" onclick="showTab('jobs', this)"><i class="fas fa-briefcase"></i> الوظائف المنشورة</button>
     </div>
 
-    <!-- ═══ APPLICATIONS TAB ═══ -->
     <div id="tab-apps" class="tab-content active">
         {% if applications %}
         <div class="app-filter-bar">
@@ -226,7 +217,6 @@
                 </div>
             </div>
 
-            <!-- APPLICANT DETAILS -->
             <div class="app-details-grid">
                 {% if app.skills %}
                 <div class="app-detail-pill">
@@ -283,7 +273,6 @@
         {% endif %}
     </div>
 
-    <!-- ═══ JOBS TAB ═══ -->
     <div id="tab-jobs" class="tab-content">
         {% if jobs %}
         {% for job in jobs %}

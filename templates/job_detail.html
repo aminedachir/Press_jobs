@@ -61,7 +61,6 @@ h3.section-h { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; padding-b
     </div>
 
     <div class="job-sidebar">
-        <!-- JOB INFO -->
         <div class="detail-card">
             <h3 class="section-h"><i class="fas fa-info-circle"></i> تفاصيل الوظيفة</h3>
             {% if job.salary %}
@@ -92,7 +91,6 @@ h3.section-h { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; padding-b
             </div>
         </div>
 
-        <!-- CHANNEL INFO -->
         <div class="detail-card">
             <h3 class="section-h"><i class="fas fa-tv"></i> عن القناة</h3>
             <div style="text-align:center;margin-bottom:1rem">
@@ -105,7 +103,6 @@ h3.section-h { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; padding-b
             {% if job.channel_bio %}<p style="color:var(--text-muted);font-size:0.85rem;line-height:1.6">{{ job.channel_bio[:150] }}</p>{% endif %}
         </div>
 
-        <!-- APPLY FORM -->
         {% if session.user_id and session.account_type == 'journalist' %}
         <div class="detail-card">
             <h3 class="section-h"><i class="fas fa-paper-plane"></i> تقدّم لهذه الوظيفة</h3>

@@ -31,7 +31,6 @@
             direction: rtl;
             overflow-x: hidden;
         }
-        /* NAVBAR */
         nav {
             position: fixed; top: 0; width: 100%; z-index: 1000;
             background: rgba(13,17,23,0.95);
@@ -63,16 +62,13 @@
         .btn-sm { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
         .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 5px; }
         .hamburger span { width: 25px; height: 2px; background: var(--text); transition: 0.3s; border-radius: 2px; }
-        /* MAIN CONTENT */
         main { padding-top: 70px; min-height: calc(100vh - 70px); }
-        /* FLASH MESSAGES */
         .flash-container { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999; width: 90%; max-width: 500px; }
         .flash { padding: 1rem 1.5rem; border-radius: 12px; margin-bottom: 0.5rem; font-weight: 600; display: flex; align-items: center; gap: 0.7rem; animation: slideDown 0.3s ease; }
         .flash.success { background: rgba(56,161,105,0.15); border: 1px solid rgba(56,161,105,0.4); color: #68d391; }
         .flash.error { background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.4); color: #fc8181; }
         .flash.warning { background: rgba(237,137,54,0.15); border: 1px solid rgba(237,137,54,0.4); color: #f6ad55; }
         @keyframes slideDown { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: translateY(0); } }
-        /* CARDS */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -81,20 +77,17 @@
             transition: all 0.3s;
         }
         .card:hover { transform: translateY(-4px); border-color: rgba(244,117,32,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        /* SECTION */
         .section { padding: 5rem 2rem; }
         .section-title { font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem; }
         .section-sub { color: var(--text-muted); margin-bottom: 3rem; font-size: 1.05rem; }
         .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; }
         .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; }
         .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem; }
-        /* BADGE */
         .badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
         .badge-blue { background: rgba(34,85,204,0.2); color: #6fa0ff; border: 1px solid rgba(34,85,204,0.3); }
         .badge-orange { background: rgba(244,117,32,0.2); color: #ffaa5c; border: 1px solid rgba(244,117,32,0.3); }
         .badge-green { background: rgba(56,161,105,0.2); color: #68d391; border: 1px solid rgba(56,161,105,0.3); }
         .badge-red { background: rgba(229,62,62,0.2); color: #fc8181; border: 1px solid rgba(229,62,62,0.3); }
-        /* FOOTER */
         footer {
             background: var(--dark2);
             border-top: 1px solid var(--border);
@@ -103,7 +96,6 @@
         }
         footer .footer-brand { font-size: 1.5rem; font-weight: 900; background: var(--gradient-orange); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
         footer p { color: var(--text-muted); font-size: 0.9rem; }
-        /* FORM STYLES */
         .form-group { margin-bottom: 1.2rem; }
         .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
         .form-group input, .form-group select, .form-group textarea {
@@ -116,7 +108,6 @@
         }
         .form-group select option { background: var(--dark2); }
         .form-group textarea { resize: vertical; min-height: 100px; }
-        /* RESPONSIVE */
         @media(max-width:900px) {
             .grid-3, .grid-4 { grid-template-columns: repeat(2,1fr); }
         }

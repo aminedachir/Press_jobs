@@ -12,7 +12,6 @@
 
 .journalists-layout { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
 
-/* Search bar */
 .search-bar { display: flex; gap: 0.7rem; margin-bottom: 2rem; }
 .search-bar input {
     flex: 1; padding: 0.85rem 1.1rem;
@@ -23,7 +22,6 @@
 .search-bar input:focus { border-color: var(--orange); }
 .search-bar input::placeholder { color: var(--text-muted); }
 
-/* Cards */
 .journalist-card {
     background: var(--card-bg); border: 1px solid var(--border);
     border-radius: 16px; padding: 1.5rem; transition: all 0.3s;
@@ -45,7 +43,6 @@
 .jc-skills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .skill-dot { background: rgba(255,255,255,0.06); border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; color: var(--text-muted); }
 
-/* Role label badges */
 .role-badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.22rem 0.7rem; border-radius: 20px; font-size: 0.73rem; font-weight: 700; }
 .role-journalism  { background: rgba(244,117,32,0.12); color: #f47520; border: 1px solid rgba(244,117,32,0.3); }
 .role-photo       { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
@@ -53,7 +50,6 @@
 .role-content     { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
 .role-other       { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border); }
 
-/* Empty state */
 .empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
 .empty-state i { font-size: 4rem; opacity: 0.12; display: block; margin-bottom: 1rem; }
 
@@ -106,7 +102,6 @@
     </div>
 </div>
 
-<!-- FILTER TABS -->
 <div class="filter-bar">
     <a href="/journalists" {% if not category %}class="active"{% endif %}>الكل</a>
     <a href="/journalists?category=صحافة" {% if category=='صحافة' %}class="active"{% endif %}><i class="fas fa-newspaper"></i> صحافة</a>
@@ -117,7 +112,6 @@
 
 <div class="journalists-layout">
 
-    <!-- SEARCH BAR -->
     <form class="search-bar" method="get">
         {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
         <input type="text" name="search" value="{{ search }}" placeholder="ابحث بالاسم أو المهارة أو الموقع...">

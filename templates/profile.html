@@ -2,7 +2,6 @@
 {% block title %}{{ user.name }} - PressJobs{% endblock %}
 {% block extra_css %}
 <style>
-/* ── Layout ── */
 .profile-layout {
     max-width: 1080px;
     margin: 0 auto;
@@ -14,7 +13,6 @@
 }
 @media(max-width:760px) { .profile-layout { grid-template-columns: 1fr; } }
 
-/* ── Sidebar card ── */
 .profile-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -36,7 +34,6 @@
 }
 .big-avatar img { width:100%; height:100%; object-fit:cover; }
 
-/* ── Avatar upload wrapper (owner only) ── */
 .avatar-wrapper {
     position: relative;
     width: 110px;
@@ -71,13 +68,11 @@
 .profile-card .location { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1rem; }
 .profile-divider { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
 
-/* ── Stats row on sidebar ── */
 .sidebar-stats { display: flex; justify-content: center; gap: 1.5rem; margin: 0.5rem 0; }
 .stat-item { text-align: center; }
 .stat-num { font-size: 1.2rem; font-weight: 900; color: var(--orange); }
 .stat-label { font-size: 0.72rem; color: var(--text-muted); }
 
-/* ── Tabs ── */
 .profile-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.8rem; flex-wrap: wrap; }
 .profile-tab {
     flex: 1;
@@ -105,7 +100,6 @@
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* ── Sections ── */
 .profile-section {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -118,7 +112,6 @@
     color: var(--orange); display: flex; align-items: center; gap: 0.5rem;
 }
 
-/* ── Form inputs ── */
 .pf-input, .pf-textarea {
     width: 100%;
     background: rgba(255,255,255,0.05);
@@ -133,7 +126,6 @@
 .pf-input:focus, .pf-textarea:focus { outline: none; border-color: var(--orange); }
 .pf-textarea { resize: vertical; min-height: 90px; }
 
-/* ── Upload zone ── */
 .upload-zone {
     border: 2px dashed var(--border);
     border-radius: 14px;
@@ -154,7 +146,6 @@
 .upload-zone p { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
 .upload-zone .hint { font-size: 0.75rem; color: var(--text-muted); opacity: 0.6; margin-top: 0.3rem; }
 
-/* ── Post type selector ── */
 .post-type-row { display: flex; gap: 0.6rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
 .post-type-btn {
     padding: 0.45rem 1rem; border-radius: 20px;
@@ -167,7 +158,6 @@
     background: rgba(244,117,32,0.1);
 }
 
-/* ── Media grid ── */
 .media-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -209,7 +199,6 @@
 .media-grid-item:hover .media-overlay { opacity: 1; }
 .media-overlay-text { font-size: 0.78rem; color: #fff; font-weight: 600; line-height: 1.4; }
 
-/* ── Lightbox ── */
 .lightbox-backdrop {
     display: none;
     position: fixed; inset: 0;
@@ -238,7 +227,6 @@
 }
 .lightbox-close:hover { background: rgba(244,117,32,0.5); }
 
-/* ── Text-only post cards ── */
 .post-card {
     border: 1px solid var(--border); border-radius: 14px;
     padding: 1.1rem 1.2rem; margin-bottom: 1rem;
@@ -250,14 +238,12 @@
 .post-card-date { font-size: 0.75rem; color: var(--text-muted); }
 .post-card-desc { color: var(--text-muted); font-size: 0.88rem; line-height: 1.6; }
 
-/* ── Skills chips ── */
 .skill-chip {
     background: rgba(34,85,204,0.15); border: 1px solid rgba(34,85,204,0.3);
     color: #6fa0ff; padding: 0.4rem 0.9rem; border-radius: 8px;
     font-size: 0.82rem; display: inline-block; margin: 0.2rem;
 }
 
-/* ── Job mini ── */
 .job-mini {
     display: flex; align-items: center; gap: 1rem; padding: 0.8rem;
     border-radius: 10px; background: rgba(255,255,255,0.03);
@@ -272,7 +258,6 @@
     font-size: 1rem; flex-shrink: 0;
 }
 
-/* ── Public info display ── */
 .pub-info-grid { display: flex; flex-direction: column; gap: 0.75rem; }
 .pub-info-row {
     display: flex; align-items: center; gap: 1rem;
@@ -288,7 +273,6 @@
 .pub-info-label i { color: var(--orange); width: 14px; }
 .pub-info-val { font-size: 0.88rem; color: var(--text); }
 
-/* ── Sidebar principal info list ── */
 .sidebar-info-list { display: flex; flex-direction: column; gap: 0.5rem; text-align: right; }
 .sidebar-info-item {
     display: flex; align-items: center; justify-content: space-between;
@@ -298,14 +282,12 @@
 .sii-label i { color: var(--orange); width: 13px; font-size: 0.75rem; }
 .sii-val { font-weight: 700; color: var(--text); }
 
-/* ── Channel tags ── */
 .channel-tag {
     display: inline-block; margin: 0.2rem;
     background: rgba(244,117,32,0.1); border: 1px solid rgba(244,117,32,0.3);
     color: var(--orange); padding: 0.25rem 0.7rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
 }
 
-/* ── Public file buttons ── */
 .pub-files-row { display: flex; flex-direction: column; gap: 1rem; }
 .pub-file-btn {
     display: flex; align-items: center; gap: 0.8rem;
@@ -319,7 +301,6 @@
 .pub-file-dl { margin-right: auto; font-size: 0.9rem; opacity: 0.5; }
 .pub-video-wrap { width: 100%; }
 
-/* ── Article links ── */
 .article-links-list { display: flex; flex-direction: column; gap: 0.5rem; }
 .article-link-item {
     display: flex; align-items: center; gap: 0.7rem;
@@ -334,7 +315,6 @@
 .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
 .empty-state i { font-size: 3.5rem; opacity: 0.12; margin-bottom: 1rem; display: block; }
 
-/* ── Edit form helpers ── */
 .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 @media(max-width:600px) { .edit-grid { grid-template-columns: 1fr; } }
 .field-label { font-size: 0.82rem; font-weight: 700; color: var(--orange); display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; }
@@ -346,7 +326,6 @@
 .file-view-btn { margin-right: auto; background: rgba(255,255,255,0.07); border: 1px solid var(--border); border-radius: 7px; padding: 0.25rem 0.7rem; font-size: 0.78rem; color: var(--text); text-decoration: none; transition: all 0.2s; }
 .file-view-btn:hover { border-color: var(--orange); color: var(--orange); }
 
-/* ── Extra responsive ── */
 @media(max-width:760px) {
     .profile-layout { padding: 1.5rem 1rem; }
 }
@@ -365,7 +344,6 @@
 
 {% block content %}
 
-<!-- ══ Lightbox ══ -->
 <div class="lightbox-backdrop" id="lightbox">
     <button class="lightbox-close" id="lightbox-close"><i class="fas fa-times"></i></button>
     <div class="lightbox-content">
@@ -380,11 +358,9 @@
 <div class="profile-layout">
 {% set is_owner = session.get('user_id') == user.id %}
 
-    <!-- ════ SIDEBAR ════ -->
     <div class="profile-sidebar">
         <div class="profile-card">
 
-            <!-- Avatar -->
             {% if is_owner %}
             <form method="POST" action="/profile/{{ user.id }}/upload-picture"
                   enctype="multipart/form-data" id="avatar-form">
@@ -414,7 +390,6 @@
             </div>
             {% endif %}
 
-            <!-- Name & role -->
             <h2>{{ user.name }}{% if user.last_name %} {{ user.last_name }}{% endif %}</h2>
             <div class="role">
                 <i class="fas fa-{% if user.account_type == 'channel' %}tv{% else %}user-tie{% endif %}"></i>
@@ -433,7 +408,6 @@
 
             <hr class="profile-divider">
 
-            <!-- Principal info block -->
             <div class="sidebar-info-list">
                 {% if user.gender %}
                 <div class="sidebar-info-item">
@@ -461,7 +435,6 @@
 
             <hr class="profile-divider">
 
-            <!-- Stats -->
             <div class="sidebar-stats">
                 <div class="stat-item">
                     <div class="stat-num">{{ posts|length if posts else 0 }}</div>
@@ -495,7 +468,6 @@
             </div>
             {% endif %}
 
-            <!-- CV download button (visible to all) -->
             {% if user.cv_filename %}
             <hr class="profile-divider">
             <a href="{{ url_for('static', filename='uploads/' + user.cv_filename) }}" target="_blank" class="pub-file-btn" style="justify-content:center;">
@@ -508,12 +480,8 @@
         </div>
     </div>
 
-    <!-- ════ MAIN ════ -->
     <div class="profile-main">
 
-        <!-- ══════════════════════════════════
-             OWNER VIEW — 3 tabs
-        ══════════════════════════════════ -->
         {% if is_owner %}
         <div class="profile-tabs">
             <div class="profile-tab active" data-tab="posts">
@@ -527,7 +495,6 @@
             </div>
         </div>
 
-        <!-- ── Tab 1: My Posts & Videos ── -->
         <div class="tab-panel active" id="tab-posts">
             {% if posts %}
                 {% set media_posts = posts | selectattr('media_filename') | list %}
@@ -595,7 +562,6 @@
             {% endif %}
         </div>
 
-        <!-- ── Tab 2: Publish New ── -->
         <div class="tab-panel" id="tab-publish">
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-plus-circle"></i> نشر جديد</h3>
@@ -610,9 +576,7 @@
                     {% endif %}
                 </div>
 
-                <!-- Media form -->
                 <div id="ptype-media">
-                    <!-- Hidden processed-video path set after BG replacement -->
                     <input type="hidden" id="processed-video-path" name="_processed_video" value="" />
 
                     <form method="POST" action="/profile/{{ user.id }}/post" enctype="multipart/form-data" id="post-media-form">
@@ -637,7 +601,6 @@
                                 <div id="media-preview" style="margin-top:0.8rem;display:none;"></div>
                             </div>
 
-                            <!-- ══ Studio Background Panel (journalists, video only) ══ -->
                             {% if user.account_type == 'journalist' %}
                             <div id="studio-bg-panel" style="display:none;">
                                 <div style="border:1.5px solid rgba(244,117,32,0.3);border-radius:14px;padding:1.2rem;background:rgba(244,117,32,0.04);">
@@ -654,7 +617,6 @@
                                     <div id="studio-bg-options" style="display:none;">
                                         <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.7rem;">ارفع صورة الاستوديو الذي تريد استخدامه كخلفية:</p>
 
-                                        <!-- Studio image upload button -->
                                         <label id="pub-studio-upload-label" style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 1rem;border:1.5px dashed var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02);">
                                             <input type="file" id="pub-studio-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
                                             <span id="pub-studio-icon" style="width:44px;height:44px;border-radius:10px;background:rgba(244,117,32,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -670,13 +632,11 @@
                                             <i class="fas fa-upload" style="color:var(--text-muted);font-size:0.9rem;flex-shrink:0;"></i>
                                         </label>
 
-                                        <!-- Process button -->
                                         <button type="button" id="btn-process-bg" class="btn btn-primary"
                                                 style="width:100%;margin-top:0.8rem;opacity:0.4;pointer-events:none;">
                                             <i class="fas fa-magic"></i> تطبيق خلفية الاستوديو
                                         </button>
 
-                                        <!-- Progress bar -->
                                         <div id="bg-progress-wrap" style="display:none;margin-top:0.9rem;">
                                             <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-bottom:0.3rem;">
                                                 <span id="bg-status-text">جاري المعالجة...</span>
@@ -687,7 +647,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Processed video preview -->
                                         <div id="bg-result-wrap" style="display:none;margin-top:1rem;">
                                             <p style="font-size:0.8rem;color:#4caf50;font-weight:700;margin-bottom:0.5rem;">
                                                 <i class="fas fa-check-circle"></i> تمت المعالجة — سيُرفع الفيديو المعالج عند النشر
@@ -708,7 +667,6 @@
                     </form>
                 </div>
 
-                <!-- Job form (channels only) -->
                 {% if user.account_type == 'channel' %}
                 <div id="ptype-job" style="display:none;">
                     <form method="POST" action="/post-job">
@@ -764,11 +722,9 @@
             </div>
         </div>
 
-        <!-- ── Tab 3: Edit Profile ── -->
         <div class="tab-panel" id="tab-edit">
         <form method="POST" action="/profile/{{ user.id }}/update" enctype="multipart/form-data">
 
-            <!-- ① المعلومات الأساسية -->
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-id-card"></i> ١ - المعلومات الأساسية</h3>
                 <div class="edit-grid">
@@ -810,7 +766,6 @@
                 </div>
             </div>
 
-            <!-- ② الخبرة والمجال -->
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-briefcase"></i> ٢ - الخبرة والمجال</h3>
                 <div class="edit-grid">
@@ -846,12 +801,10 @@
                 </div>
             </div>
 
-            <!-- ③ الملفات الإعلامية -->
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-folder-open"></i> ٣ - الملفات الإعلامية</h3>
                 <div class="edit-grid">
 
-                    <!-- CV -->
                     <div style="grid-column:span 2;">
                         <label class="field-label"><i class="fas fa-file-alt"></i> السيرة الذاتية (CV)</label>
                         {% if user.cv_filename %}
@@ -873,7 +826,6 @@
                         </div>
                     </div>
 
-                    <!-- Intro video -->
                     <div style="grid-column:span 2;">
                         <label class="field-label"><i class="fas fa-video"></i> فيديو تقديم الأخبار</label>
                         {% if user.intro_video %}
@@ -887,7 +839,6 @@
                         <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;" id="intro-replace-hint">لتغيير الفيديو اختر ملفاً جديداً</div>
                         {% endif %}
 
-                        <!-- Upload zone (raw video) -->
                         <div class="upload-zone" id="introv-zone">
                             <input type="file" name="intro_video" id="introv-input" accept="video/*" />
                             <i class="fas fa-film"></i>
@@ -896,10 +847,8 @@
                             <div id="introv-name" style="margin-top:0.5rem;font-size:0.8rem;color:var(--orange);display:none;"></div>
                         </div>
 
-                        <!-- Hidden field: if user processed the intro video with BG replacement -->
                         <input type="hidden" name="processed_intro_video" id="processed-intro-video-field" value="" />
 
-                        <!-- Studio BG panel for intro video -->
                         <div id="intro-studio-panel" style="display:none;margin-top:1rem;">
                             <div style="border:1.5px solid rgba(244,117,32,0.3);border-radius:14px;padding:1.2rem;background:rgba(244,117,32,0.04);">
                                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem;">
@@ -914,7 +863,7 @@
                                 <div id="intro-studio-options" style="display:none;">
                                     <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.7rem;">ارفع صورة الاستوديو الذي تريد استخدامه كخلفية:</p>
 
-                                    <!-- Studio image upload button -->
+                                    
                                     <label id="intro-studio-upload-label" style="display:flex;align-items:center;gap:0.8rem;padding:0.75rem 1rem;border:1.5px dashed var(--border);border-radius:12px;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02);">
                                         <input type="file" id="intro-studio-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
                                         <span id="intro-studio-icon" style="width:44px;height:44px;border-radius:10px;background:rgba(244,117,32,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -930,13 +879,11 @@
                                         <i class="fas fa-upload" style="color:var(--text-muted);font-size:0.9rem;flex-shrink:0;"></i>
                                     </label>
 
-                                    <!-- Process button -->
                                     <button type="button" id="btn-intro-process-bg" class="btn btn-primary"
                                             style="width:100%;margin-top:0.8rem;opacity:0.4;pointer-events:none;">
                                         <i class="fas fa-magic"></i> تطبيق خلفية الاستوديو على الفيديو
                                     </button>
 
-                                    <!-- Progress bar -->
                                     <div id="intro-bg-progress-wrap" style="display:none;margin-top:0.9rem;">
                                         <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);margin-bottom:0.3rem;">
                                             <span id="intro-bg-status-text">جاري المعالجة...</span>
@@ -947,7 +894,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Result -->
                                     <div id="intro-bg-result-wrap" style="display:none;margin-top:1rem;">
                                         <p style="font-size:0.8rem;color:#4caf50;font-weight:700;margin-bottom:0.5rem;">
                                             <i class="fas fa-check-circle"></i> تمت المعالجة — سيُحفظ هذا الفيديو كفيديو تقديمك عند الحفظ
@@ -963,7 +909,6 @@
                 </div>
             </div>
 
-            <!-- ④ معرض الأعمال -->
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-images"></i> ٤ - معرض الأعمال</h3>
                 <div class="edit-grid">
@@ -986,7 +931,6 @@
                 </div>
             </div>
 
-            <!-- ⑤ ملاحظات إضافية -->
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-star"></i> ٥ - مهارات وتخصصات إضافية</h3>
                 <textarea class="pf-textarea" name="extra_skills" style="min-height:90px;"
@@ -1002,9 +946,6 @@
         </form>
         </div>
 
-        <!-- ══════════════════════════════════
-             PUBLIC / VISITOR VIEW
-        ══════════════════════════════════ -->
         {% else %}
         <div class="profile-tabs">
             <div class="profile-tab active" data-tab="pub-posts">
@@ -1023,7 +964,6 @@
             {% endif %}
         </div>
 
-        <!-- Public: Posts & Videos -->
         <div class="tab-panel active" id="tab-pub-posts">
             {% if posts %}
                 {% set media_posts = posts | selectattr('media_filename') | list %}
@@ -1083,11 +1023,9 @@
             {% endif %}
         </div>
 
-        <!-- Public: Info tab (journalist) -->
         {% if user.account_type == 'journalist' %}
         <div class="tab-panel" id="tab-pub-info">
 
-            <!-- ① المعلومات الأساسية -->
             {% if user.gender or user.civil_status or user.location %}
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-id-card"></i> المعلومات الأساسية</h3>
@@ -1120,7 +1058,6 @@
             </div>
             {% endif %}
 
-            <!-- ② الخبرة والمجال -->
             {% if user.specialty or user.years_experience or user.skills or user.education or user.preferred_channels %}
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-briefcase"></i> الخبرة والمجال</h3>
@@ -1167,7 +1104,6 @@
             </div>
             {% endif %}
 
-            <!-- ③ الملفات الإعلامية -->
             {% if user.cv_filename or user.intro_video %}
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-folder-open"></i> الملفات الإعلامية</h3>
@@ -1192,8 +1128,6 @@
                 </div>
             </div>
             {% endif %}
-
-            <!-- ④ معرض الأعمال - روابط المقالات -->
             {% if user.article_links %}
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-newspaper"></i> مقالات وتقارير منشورة</h3>
@@ -1211,7 +1145,6 @@
             </div>
             {% endif %}
 
-            <!-- ⑤ مهارات إضافية -->
             {% if user.extra_skills %}
             <div class="profile-section">
                 <h3 class="section-title-sm"><i class="fas fa-plus-circle"></i> مهارات وتخصصات إضافية</h3>
@@ -1229,7 +1162,6 @@
         </div>
         {% endif %}
 
-        <!-- Public: Jobs tab (channel) -->
         {% if user.account_type == 'channel' %}
         <div class="tab-panel" id="tab-pub-jobs">
             {% if jobs %}
@@ -1256,13 +1188,12 @@
 
         {% endif %}{# end is_owner #}
 
-    </div><!-- /profile-main -->
-</div><!-- /profile-layout -->
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* ── File label helpers (CV, intro video) ── */
     [['cv-input','cv-name'], ['introv-input','introv-name']].forEach(([inputId, nameId]) => {
         const el = document.getElementById(inputId);
         if (el) el.addEventListener('change', function() {
@@ -1271,22 +1202,19 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    /* ── Avatar: instant preview + submit on file pick ── */
     const avatarFileInput = document.getElementById('avatar-file-input');
     if (avatarFileInput) {
         avatarFileInput.addEventListener('change', function () {
             const file = this.files[0];
             if (!file) return;
-            // Show local preview immediately
             const url = URL.createObjectURL(file);
             const avatarDiv = this.closest('.avatar-wrapper').querySelector('.big-avatar');
             avatarDiv.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
-            // Submit the form
+          
             document.getElementById('avatar-form').submit();
         });
     }
 
-    /* ── Tab switching ── */
     function activateTab(tab) {
         document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1302,7 +1230,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (tab) activateTab(tab);
     };
 
-    /* ── Post-type switcher ── */
     document.querySelectorAll('.post-type-btn').forEach(btn =>
         btn.addEventListener('click', function () {
             document.querySelectorAll('.post-type-btn').forEach(b => b.classList.remove('active'));
@@ -1313,7 +1240,6 @@ document.addEventListener('DOMContentLoaded', function () {
         })
     );
 
-    /* ── Avatar label ── */
     const avatarInput = document.getElementById('avatar-input');
     if (avatarInput) {
         avatarInput.addEventListener('change', function () {
@@ -1322,7 +1248,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* ── Media preview ── */
     const mediaInput = document.getElementById('media-input');
     if (mediaInput) {
         mediaInput.addEventListener('change', function () {
@@ -1338,7 +1263,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 img.src = url;
                 img.style.cssText = 'max-width:100%;border-radius:10px;max-height:280px;object-fit:contain;';
                 preview.appendChild(img);
-                // Hide studio panel for images
+               
                 const sp = document.getElementById('studio-bg-panel');
                 if (sp) sp.style.display = 'none';
             } else if (file.type.startsWith('video/')) {
@@ -1346,7 +1271,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 vid.src = url; vid.controls = true;
                 vid.style.cssText = 'max-width:100%;border-radius:10px;max-height:280px;';
                 preview.appendChild(vid);
-                // Show studio panel for journalists
+                
                 const sp = document.getElementById('studio-bg-panel');
                 if (sp) {
                     sp.style.display = 'block';
@@ -1357,14 +1282,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* ── Drag-over ── */
     document.querySelectorAll('.upload-zone').forEach(zone => {
         zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
         zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
         zone.addEventListener('drop',      () => zone.classList.remove('dragover'));
     });
 
-    /* ── Lightbox ── */
     const lightbox      = document.getElementById('lightbox');
     const lightboxMedia = document.getElementById('lightbox-media');
     const lightboxTitle = document.getElementById('lightbox-title');
@@ -1403,10 +1326,6 @@ document.addEventListener('DOMContentLoaded', function () {
     lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
-    /* ════════════════════════════════════════════════════════════════
-       Studio Background Replacement
-       — user uploads their own studio image, no preset folder needed
-    ════════════════════════════════════════════════════════════════ */
 
     /**
      * Wire up one studio-bg panel.
@@ -1442,7 +1361,6 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.style.pointerEvents = ok ? 'auto' : 'none';
         }
 
-        // ── Enable checkbox ────────────────────────────────────────────────
         const cb = document.getElementById(cfg.enableCbId);
         if (cb) {
             cb.addEventListener('change', function () {
@@ -1455,7 +1373,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // ── Studio image file input ────────────────────────────────────────
         const studioInput = document.getElementById(cfg.studioInputId);
         const uploadLabel = document.getElementById(cfg.studioLabelId);
 
@@ -1470,7 +1387,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!file) return;
                 studioFile = file;
 
-                // Show thumbnail preview in the label
                 const reader = new FileReader();
                 reader.onload = e => {
                     const thumb     = document.getElementById(cfg.studioThumbId);
@@ -1489,7 +1405,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // ── Process button ─────────────────────────────────────────────────
         const processBtn = document.getElementById(cfg.processBtnId);
         if (processBtn) {
             processBtn.addEventListener('click', function () {
@@ -1574,7 +1489,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return { updateBtn };
     }
 
-    /* ── PUBLISH panel ── */
     {% if user.account_type == 'journalist' %}
     let pubPanel = null;
 
@@ -1608,7 +1522,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    /* ── INTRO VIDEO panel ── */
     const introPanel = makeStudioPanel({
         getVideoFile:      () => { const el = document.getElementById('introv-input'); return el && el.files[0] ? el.files[0] : null; },
         enableCbId:        'enable-intro-studio-bg',
@@ -1648,7 +1561,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Show intro studio panel when a video file is chosen in edit tab
     const introvInput = document.getElementById('introv-input');
     if (introvInput) {
         introvInput.addEventListener('change', function () {
@@ -1660,14 +1572,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Before the edit form submits: if BG replacement was done,
-    // disable the raw video input so update_profile doesn't re-upload it
     const editForm = document.querySelector('#tab-edit form');
     if (editForm) {
         editForm.addEventListener('submit', function () {
             const processedField = document.getElementById('processed-intro-video-field');
             if (processedField && processedField.value) {
-                // BG replacement was confirmed — don't re-upload the raw file
                 const rawInput = document.getElementById('introv-input');
                 if (rawInput) rawInput.disabled = true;
             }

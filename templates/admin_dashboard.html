@@ -33,7 +33,6 @@
             overflow-x: hidden;
         }
 
-        /* ── SIDEBAR ─────────────────────────────────── */
         .sidebar {
             position: fixed;
             top: 0; right: 0;
@@ -149,14 +148,12 @@
         }
         .btn-logout:hover { background: rgba(229,62,62,0.2); }
 
-        /* ── MAIN CONTENT ─────────────────────────────── */
         .main-content {
             margin-right: var(--sidebar-w);
             min-height: 100vh;
             padding: 2rem;
         }
 
-        /* ── TOP BAR ─────────────────────────────────── */
         .top-bar {
             display: flex;
             align-items: center;
@@ -175,7 +172,6 @@
             border: 1px solid var(--border);
         }
 
-        /* ── STATS GRID ──────────────────────────────── */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -218,7 +214,6 @@
         .stat-value { font-size: 2rem; font-weight: 900; line-height: 1; }
         .stat-label { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.3rem; }
 
-        /* ── SECTION PANELS ──────────────────────────── */
         .panel {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -258,7 +253,6 @@
             color: var(--text-muted);
         }
 
-        /* ── TABLE ───────────────────────────────────── */
         .data-table { width: 100%; border-collapse: collapse; }
         .data-table th {
             padding: 0.8rem 1.2rem;
@@ -298,7 +292,6 @@
         .user-name  { font-weight: 700; font-size: 0.88rem; }
         .user-email { font-size: 0.76rem; color: var(--text-muted); margin-top: 0.1rem; }
 
-        /* badges */
         .badge {
             display: inline-flex; align-items: center; gap: 0.3rem;
             padding: 0.2rem 0.65rem;
@@ -311,7 +304,6 @@
         .badge-green  { background: rgba(56,161,105,0.18); color: #68d391; border: 1px solid rgba(56,161,105,0.3); }
         .badge-gray   { background: rgba(255,255,255,0.07); color: var(--text-muted); border: 1px solid var(--border); }
 
-        /* action buttons */
         .btn-view {
             display: inline-flex; align-items: center; gap: 0.35rem;
             padding: 0.35rem 0.8rem;
@@ -343,7 +335,6 @@
         }
         .btn-delete:hover { background: rgba(229,62,62,0.25); }
 
-        /* ── FLASH ───────────────────────────────────── */
         .flash-container {
             position: fixed; top: 1rem; left: 50%;
             transform: translateX(-50%);
@@ -363,7 +354,6 @@
         .flash.warning { background: rgba(237,137,54,0.15); border: 1px solid rgba(237,137,54,0.4); color: #f6ad55; }
         @keyframes slideDown { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: translateY(0); } }
 
-        /* ── SEARCH BAR ──────────────────────────────── */
         .search-bar {
             display: flex; align-items: center; gap: 0.5rem;
             padding: 0.6rem 1rem;
@@ -379,7 +369,6 @@
         }
         .search-bar i { color: var(--text-muted); font-size: 0.85rem; }
 
-        /* ── CONFIRM MODAL ───────────────────────────── */
         .modal-overlay {
             display: none;
             position: fixed; inset: 0;
@@ -430,13 +419,11 @@
         }
         .modal-confirm:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(229,62,62,0.4); }
 
-        /* ── EMPTY STATE ─────────────────────────────── */
         .empty-state {
             text-align: center; padding: 3rem 1rem; color: var(--text-muted);
         }
         .empty-state i { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.4; display: block; }
 
-        /* ── RESPONSIVE ──────────────────────────────── */
         @media(max-width:900px) {
             .stats-grid { grid-template-columns: repeat(2,1fr); }
         }
@@ -459,7 +446,6 @@
             .modal-actions { flex-direction: column; }
             .modal-cancel, .modal-confirm { width: 100%; text-align: center; justify-content: center; }
         }
-        /* Mobile menu button */
         .mobile-menu-btn {
             display: none;
             position: fixed;
@@ -488,13 +474,11 @@
 </head>
 <body>
 
-<!-- Mobile sidebar toggle -->
 <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()">
     <i class="fas fa-bars"></i>
 </button>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-<!-- ── FLASH MESSAGES ───────────────────────────────────────── -->
 {% with messages = get_flashed_messages(with_categories=true) %}
 {% if messages %}
 <div class="flash-container">
@@ -508,7 +492,6 @@
 {% endif %}
 {% endwith %}
 
-<!-- ── CONFIRM MODAL ────────────────────────────────────────── -->
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-box">
         <div class="modal-danger-icon"><i class="fas fa-trash-alt"></i></div>
@@ -525,7 +508,6 @@
     </div>
 </div>
 
-<!-- ── SIDEBAR ──────────────────────────────────────────────── -->
 <aside class="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon"><i class="fas fa-shield-alt"></i></div>
@@ -577,10 +559,8 @@
     </div>
 </aside>
 
-<!-- ── MAIN ─────────────────────────────────────────────────── -->
 <main class="main-content">
 
-    <!-- TOP BAR -->
     <div class="top-bar">
         <div>
             <h1 id="pageTitle"><i class="fas fa-th-large" style="color:var(--orange)"></i> نظرة عامة</h1>
@@ -589,7 +569,6 @@
         <div class="timestamp" id="liveClock"></div>
     </div>
 
-    <!-- ── SECTION: OVERVIEW ─────────────────────────────────── -->
     <div id="section-overview">
         <div class="stats-grid">
             <div class="stat-card blue" onclick="showSection('journalists',document.querySelector('[onclick*=journalists]'))">
@@ -614,7 +593,6 @@
             </div>
         </div>
 
-        <!-- Quick recent jobs -->
         <div class="panel">
             <div class="panel-header">
                 <div class="panel-title">
@@ -659,9 +637,8 @@
             <div class="empty-state"><i class="fas fa-briefcase"></i>لا توجد وظائف بعد</div>
             {% endif %}
         </div>
-    </div><!-- /overview -->
+    </div>
 
-    <!-- ── SECTION: JOURNALISTS ──────────────────────────────── -->
     <div id="section-journalists" style="display:none">
         <div class="panel">
             <div class="panel-header">
@@ -743,9 +720,8 @@
             </div>
             {% endif %}
         </div>
-    </div><!-- /journalists -->
+    </div>
 
-    <!-- ── SECTION: CHANNELS ─────────────────────────────────── -->
     <div id="section-channels" style="display:none">
         <div class="panel">
             <div class="panel-header">
@@ -821,9 +797,8 @@
             </div>
             {% endif %}
         </div>
-    </div><!-- /channels -->
+    </div>
 
-    <!-- ── SECTION: JOBS ─────────────────────────────────────── -->
     <div id="section-jobs" style="display:none">
         <div class="panel">
             <div class="panel-header">
@@ -893,13 +868,11 @@
 </main>
 
 <script>
-// ── Mobile sidebar ────────────────────────────────────────────
 function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('open');
     document.getElementById('sidebarOverlay').classList.toggle('open');
 }
 
-// ── Section switching ─────────────────────────────────────────
 const sections   = ['overview','journalists','channels','jobs'];
 const sectionTitles = {
     overview:    '<i class="fas fa-th-large" style="color:var(--orange)"></i> نظرة عامة',
@@ -918,14 +891,12 @@ function showSection(id, linkEl) {
     document.getElementById('pageTitle').innerHTML = sectionTitles[id] || id;
 }
 
-// Handle URL hash on load
 const hash = window.location.hash.replace('#','');
 if (sections.includes(hash)) {
     const linkEl = document.querySelector(`[onclick*="${hash}"]`);
     showSection(hash, linkEl);
 }
 
-// ── Live clock ────────────────────────────────────────────────
 function updateClock() {
     const now = new Date();
     const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric',
@@ -935,7 +906,6 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 60000);
 
-// ── Delete modal ──────────────────────────────────────────────
 function confirmDelete(url, title, body) {
     document.getElementById('modalTitle').textContent = title;
     document.getElementById('modalBody').textContent  = body;
@@ -949,7 +919,6 @@ document.getElementById('deleteModal').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
 });
 
-// ── Table search filter ───────────────────────────────────────
 function filterTable(input, tableId) {
     const q = input.value.toLowerCase();
     const rows = document.querySelectorAll('#' + tableId + ' tbody tr');
@@ -958,7 +927,6 @@ function filterTable(input, tableId) {
     });
 }
 
-// ── Auto-hide flash ───────────────────────────────────────────
 setTimeout(() => {
     document.querySelectorAll('.flash').forEach(el => {
         el.style.transition = 'opacity 0.5s';
