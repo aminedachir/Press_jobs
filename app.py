@@ -11,9 +11,9 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = 'pressjobs_secret_2024'
 
-DB_PATH = 'pressjobs.db'
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+_DATA_DIR = os.environ.get('DATA_DIR', '.')
+DB_PATH = os.path.join(_DATA_DIR, 'pressjobs.db')
+UPLOAD_FOLDER = os.path.join(_DATA_DIR, 'uploads')
 
 # In-memory tracker for background-processing tasks
 _bg_jobs      = {}
