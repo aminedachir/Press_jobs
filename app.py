@@ -948,7 +948,18 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
 
         import cv2
         import numpy as np
+        import urllib.request
         import mediapipe as mp
+        from mediapipe.tasks.python import vision
+        from mediapipe.tasks.python.core import base_options as bo
+
+        # Download the selfie segmentation model if not already present
+        model_path = os.path.join(_DATA_DIR, 'selfie_segmenter.tflite')
+        if not os.path.exists(model_path):
+            urllib.request.urlretrieve(
+                'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
+                model_path
+            )
 
         fg_cap = cv2.VideoCapture(fg_path)
         if not fg_cap.isOpened():
@@ -970,19 +981,28 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
         if not writer.isOpened():
             raise RuntimeError("VideoWriter could not be opened")
 
-        segmenter = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=1)
+        # New Tasks API segmenter
+        options = vision.ImageSegmenterOptions(
+            base_options=bo.BaseOptions(model_asset_path=model_path),
+            output_category_mask=True
+        )
+        segmenter = vision.ImageSegmenter.create_from_options(options)
 
         frame_idx = 0
         while True:
             ret, frame = fg_cap.read()
             if not ret:
                 break
-            rgb      = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            mask     = segmenter.process(rgb).segmentation_mask
-            mask     = cv2.GaussianBlur(mask, (21, 21), 0)
-            mask_3ch = np.stack([mask] * 3, axis=-1)
-            fg_f32   = frame.astype(np.float32) / 255.0
-            blended  = fg_f32 * mask_3ch + bg_f32 * (1.0 - mask_3ch)
+            rgb       = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_image  = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            result    = segmenter.segment(mp_image)
+            mask      = result.category_mask.numpy_view().astype(np.float32)
+            # category_mask: 0 = background, 1 = person — convert to float [0,1]
+            mask      = (mask == 1).astype(np.float32)
+            mask      = cv2.GaussianBlur(mask, (21, 21), 0)
+            mask_3ch  = np.stack([mask] * 3, axis=-1)
+            fg_f32    = frame.astype(np.float32) / 255.0
+            blended   = fg_f32 * mask_3ch + bg_f32 * (1.0 - mask_3ch)
             writer.write(np.clip(blended * 255.0, 0, 255).astype(np.uint8))
             frame_idx += 1
             with _bg_jobs_lock:
