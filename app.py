@@ -391,6 +391,15 @@ def update_profile(user_id):
     cv_filename  = save_file('cv_file',    'cv',    {'.pdf', '.doc', '.docx'})
     intro_video  = save_file('intro_video','introv', ALL_VIDEO)
 
+    # If the user processed a background-replaced video (via the studio panel)
+    # and did NOT re-upload a raw video, use the processed result instead.
+    if not intro_video:
+        processed_intro = request.form.get('processed_intro_video', '').strip()
+        if processed_intro:
+            safe_pi = secure_filename(processed_intro)
+            if os.path.exists(os.path.join(UPLOAD_FOLDER, safe_pi)):
+                intro_video = safe_pi
+
     conn = get_db()
     old = conn.execute('SELECT cv_filename, intro_video FROM users WHERE id=?', (user_id,)).fetchone()
 
@@ -997,8 +1006,8 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
             mp_image  = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             result    = segmenter.segment(mp_image)
             mask      = result.category_mask.numpy_view().astype(np.float32)
-            # category_mask: 0 = background, 1 = person — convert to float [0,1]
-            mask      = (mask == 1).astype(np.float32)
+            # category_mask: 0 = background, 255 = person — convert to float [0,1]
+            mask      = (mask > 127).astype(np.float32)
             mask      = cv2.GaussianBlur(mask, (21, 21), 0)
             mask_3ch  = np.stack([mask] * 3, axis=-1)
             fg_f32    = frame.astype(np.float32) / 255.0
