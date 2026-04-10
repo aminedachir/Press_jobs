@@ -68,21 +68,21 @@
                 <label><i class="fas fa-tag"></i> نوع المؤسسة الإعلامية</label>
                 <div class="type-selector" style="margin-bottom:0">
                     <div class="type-option">
-                        <input type="radio" name="channel_type" value="قناة اعلامية" id="ct1">
+                        <input type="radio" data-channel-type="قناة اعلامية" id="ct1">
                         <label for="ct1">
                             <i class="fas fa-tv"></i>
                             <span>قناة اعلامية</span>
                         </label>
                     </div>
                     <div class="type-option">
-                        <input type="radio" name="channel_type" value="موقع اخباري" id="ct2">
+                        <input type="radio" data-channel-type="موقع اخباري" id="ct2">
                         <label for="ct2">
                             <i class="fas fa-globe"></i>
                             <span>موقع اخباري</span>
                         </label>
                     </div>
                     <div class="type-option" style="grid-column:1/-1">
-                        <input type="radio" name="channel_type" value="جريدة الكترونية" id="ct3">
+                        <input type="radio" data-channel-type="جريدة الكترونية" id="ct3">
                         <label for="ct3">
                             <i class="fas fa-newspaper"></i>
                             <span>جريدة الكترونية</span>
@@ -128,6 +128,8 @@
                 <label><i class="fas fa-info-circle"></i> نبذة تعريفية</label>
                 <textarea name="bio" placeholder="اكتب نبذة مختصرة عنك أو عن قناتك..."></textarea>
             </div>
+            <!-- hidden field ensures channel_type is always submitted even when radio inputs are hidden -->
+            <input type="hidden" name="channel_type" id="channel_type_hidden" value="">
             <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:1rem;font-size:1rem">
                 <i class="fas fa-user-plus"></i> إنشاء الحساب
             </button>
@@ -138,12 +140,29 @@
     </div>
 </div>
 <script>
+function syncChannelType() {
+    const checked = document.querySelector('input[data-channel-type]:checked');
+    const hidden = document.getElementById('channel_type_hidden');
+    if (hidden) hidden.value = checked ? checked.dataset.channelType : '';
+}
+
+// Make the data-channel-type radios behave like a radio group
+document.querySelectorAll('input[data-channel-type]').forEach(r => {
+    r.addEventListener('change', function() {
+        document.querySelectorAll('input[data-channel-type]').forEach(x => {
+            if (x !== this) x.checked = false;
+        });
+        syncChannelType();
+    });
+});
+
 document.querySelectorAll('input[name="account_type"]').forEach(r => {
     r.addEventListener('change', function() {
         const jFields = document.querySelectorAll('.journalist-field');
         const cFields = document.querySelectorAll('.channel-field');
         jFields.forEach(f => f.style.display = this.value === 'journalist' ? 'block' : 'none');
         cFields.forEach(f => f.style.display = this.value === 'channel' ? 'block' : 'none');
+        syncChannelType();
     });
 });
 </script>

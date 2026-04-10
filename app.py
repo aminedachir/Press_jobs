@@ -138,14 +138,12 @@ migrate_db()
 
 from flask import send_from_directory
 
-@app.route('/static/uploads/<path:filename>')
+@app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     """Serve uploads from DATA_DIR (persistent disk on Render, or static/uploads locally)."""
-    
     data_uploads = os.path.join(_DATA_DIR, 'uploads')
     if os.path.exists(os.path.join(data_uploads, filename)):
         return send_from_directory(data_uploads, filename)
-   
     return send_from_directory(os.path.join('static', 'uploads'), filename)
 
 @app.route('/')

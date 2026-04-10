@@ -133,7 +133,7 @@
     <div class="dash-header">
         <div class="dash-avatar">
             {% if user.profile_image %}
-                <img src="/static/uploads/{{ user.profile_image }}" alt="{{ user.name }}">
+                <img src="/uploads/{{ user.profile_image }}" alt="{{ user.name }}">
             {% else %}
                 <i class="fas fa-tv"></i>
             {% endif %}
@@ -190,7 +190,7 @@
                 <div class="app-applicant">
                     <div class="app-avatar">
                         {% if app.applicant_image %}
-                            <img src="/static/uploads/{{ app.applicant_image }}" alt="{{ app.applicant_name }}">
+                            <img src="/uploads/{{ app.applicant_image }}" alt="{{ app.applicant_name }}">
                         {% else %}
                             <i class="fas fa-user"></i>
                         {% endif %}
@@ -257,7 +257,7 @@
                 {% endif %}
                 <a href="/profile/{{ app.journalist_id }}" class="btn btn-outline btn-sm" target="_blank"><i class="fas fa-user"></i> الملف الشخصي</a>
                 {% if app.cv_filename %}
-                <a href="/static/uploads/{{ app.cv_filename }}" class="btn btn-outline btn-sm" download><i class="fas fa-file-pdf"></i> السيرة الذاتية</a>
+                <a href="/uploads/{{ app.cv_filename }}" class="btn btn-outline btn-sm" download><i class="fas fa-file-pdf"></i> السيرة الذاتية</a>
                 {% endif %}
             </div>
         </div>
