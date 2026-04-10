@@ -1035,23 +1035,50 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
         with _bg_jobs_lock:
             _bg_jobs[task_id]['progress'] = 90
 
-        result = subprocess.run([
-            'ffmpeg', '-y',
-            '-i', raw_path,
-            '-i', fg_path,
-            '-map', '0:v:0',
-            '-map', '1:a?',
-            '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
-            '-c:a', 'aac', '-b:a', '128k',
-            '-movflags', '+faststart',
-            output_path
-        ], capture_output=True, timeout=600)
+        # Check ffmpeg is available
+        ffmpeg_check = subprocess.run(['ffmpeg', '-version'], capture_output=True)
+        if ffmpeg_check.returncode != 0:
+            # ffmpeg not found — rename raw file as output (no audio)
+            import shutil
+            shutil.move(raw_path, output_path)
+        else:
+            # Check if original video has an audio stream
+            probe = subprocess.run(
+                ['ffprobe', '-v', 'error', '-select_streams', 'a',
+                 '-show_entries', 'stream=codec_type', '-of', 'csv=p=0', fg_path],
+                capture_output=True, timeout=30
+            )
+            has_audio = probe.returncode == 0 and b'audio' in probe.stdout
 
-        if os.path.exists(raw_path):
-            os.remove(raw_path)
+            if has_audio:
+                cmd = [
+                    'ffmpeg', '-y',
+                    '-i', raw_path,
+                    '-i', fg_path,
+                    '-map', '0:v:0',
+                    '-map', '1:a:0',
+                    '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23',
+                    '-c:a', 'aac', '-b:a', '128k',
+                    '-movflags', '+faststart',
+                    output_path
+                ]
+            else:
+                cmd = [
+                    'ffmpeg', '-y',
+                    '-i', raw_path,
+                    '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23',
+                    '-movflags', '+faststart',
+                    output_path
+                ]
 
-        if result.returncode != 0:
-            raise RuntimeError(f"ffmpeg error: {result.stderr.decode()}")
+            ffmpeg_result = subprocess.run(cmd, capture_output=True, timeout=1200)
+
+            if os.path.exists(raw_path):
+                os.remove(raw_path)
+
+            if ffmpeg_result.returncode != 0:
+                err_msg = ffmpeg_result.stderr.decode(errors='replace')
+                raise RuntimeError(f"ffmpeg failed: {err_msg}")
 
         with _bg_jobs_lock:
             _bg_jobs[task_id]['status']   = 'done'

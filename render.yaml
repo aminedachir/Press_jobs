@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: pressjobs
+    runtime: python
+    buildCommand: "apt-get install -y ffmpeg && pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    disk:
+      name: pressjobs-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: SECRET_KEY
+        generateValue: true
