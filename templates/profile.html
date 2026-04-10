@@ -1442,7 +1442,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             clearInterval(pollTimer);
                             setProgress(100, 'اكتملت المعالجة ✓');
                             const rv = document.getElementById(cfg.resultVideoId);
-                            if (rv) rv.src = '/static/uploads/' + job.result;
+                            if (rv) rv.src = '/uploads/' + job.result;
                             document.getElementById(cfg.resultWrapId).style.display = 'block';
                             if (processBtn) {
                                 processBtn.disabled = false;
