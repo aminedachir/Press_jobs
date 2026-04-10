@@ -12,6 +12,14 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'pressjobs_secret_2024')
 
 _DATA_DIR = os.environ.get('DATA_DIR', '.')
+if _DATA_DIR == '.':
+    import warnings
+    warnings.warn(
+        "DATA_DIR env variable is not set. The database will be stored in the current "
+        "working directory and may be lost on server restarts (e.g. Render free tier). "
+        "Set DATA_DIR to a persistent disk path to keep data across restarts.",
+        RuntimeWarning
+    )
 DB_PATH = os.path.join(_DATA_DIR, 'pressjobs.db')
 UPLOAD_FOLDER = os.path.join(_DATA_DIR, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -168,12 +176,13 @@ def register():
         bio          = request.form.get('bio', '')
         skills       = request.form.get('skills', '')
         education    = request.form.get('education', '')
+        specialty    = request.form.get('specialty', '')
         channel_type = request.form.get('channel_type', '')   
         try:
             conn = get_db()
-            conn.execute('''INSERT INTO users (name, email, password, account_type, location, bio, skills, education, channel_type)
-                           VALUES (?,?,?,?,?,?,?,?,?)''',
-                        (name, email, password, account_type, location, bio, skills, education, channel_type))
+            conn.execute('''INSERT INTO users (name, email, password, account_type, location, bio, skills, education, specialty, channel_type)
+                           VALUES (?,?,?,?,?,?,?,?,?,?)''',
+                        (name, email, password, account_type, location, bio, skills, education, specialty, channel_type))
             conn.commit()
             conn.close()
             flash('تم إنشاء حسابك بنجاح! يمكنك تسجيل الدخول الآن', 'success')
@@ -1006,11 +1015,13 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
             mp_image  = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             result    = segmenter.segment(mp_image)
             mask      = result.category_mask.numpy_view().astype(np.float32)
-            # category_mask: 0 = background, 255 = person — convert to float [0,1]
-            mask      = (mask > 127).astype(np.float32)
+            # category_mask from MediaPipe selfie segmenter: 0 = person, 1 = background
+            # We want mask=1 where the PERSON is, so we INVERT: person pixels have category 0
+            mask      = (mask < 0.5).astype(np.float32)   # 1.0 = person, 0.0 = background
             mask      = cv2.GaussianBlur(mask, (21, 21), 0)
             mask_3ch  = np.stack([mask] * 3, axis=-1)
             fg_f32    = frame.astype(np.float32) / 255.0
+            # Blend: keep person pixels from original frame, replace background with studio image
             blended   = fg_f32 * mask_3ch + bg_f32 * (1.0 - mask_3ch)
             writer.write(np.clip(blended * 255.0, 0, 255).astype(np.uint8))
             frame_idx += 1
