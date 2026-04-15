@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import os
 import subprocess
 import threading
@@ -12,22 +13,17 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'pressjobs_secret_2024')
 
 _DATA_DIR = os.environ.get('DATA_DIR', '.')
-if _DATA_DIR == '.':
-    import warnings
-    warnings.warn(
-        "DATA_DIR env variable is not set. The database will be stored in the current "
-        "working directory and may be lost on server restarts (e.g. Render free tier). "
-        "Set DATA_DIR to a persistent disk path to keep data across restarts.",
-        RuntimeWarning
-    )
-DB_PATH = os.path.join(_DATA_DIR, 'pressjobs.db')
 UPLOAD_FOLDER = os.path.join(_DATA_DIR, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is not set.")
 
 _bg_jobs      = {}
 _bg_jobs_lock = threading.Lock()
+
 
 def convert_to_mp4(src_path):
     base = os.path.splitext(src_path)[0]
@@ -47,16 +43,17 @@ def convert_to_mp4(src_path):
         pass
     return src_path
 
+
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
     return conn
+
 
 def init_db():
     conn = get_db()
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
@@ -67,10 +64,23 @@ def init_db():
         education TEXT,
         experience TEXT,
         profile_image TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        last_name TEXT,
+        gender TEXT,
+        civil_status TEXT,
+        specialty TEXT,
+        years_experience TEXT,
+        preferred_channels TEXT,
+        extra_skills TEXT,
+        cv_filename TEXT,
+        intro_video TEXT,
+        article_links TEXT,
+        channel_type TEXT,
+        cover_image TEXT,
+        is_admin INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     c.execute('''CREATE TABLE IF NOT EXISTS jobs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         channel_id INTEGER NOT NULL,
         title TEXT NOT NULL,
         description TEXT NOT NULL,
@@ -79,87 +89,90 @@ def init_db():
         job_type TEXT,
         salary TEXT,
         requirements TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(channel_id) REFERENCES users(id)
     )''')
     c.execute('''CREATE TABLE IF NOT EXISTS applications (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         job_id INTEGER NOT NULL,
         journalist_id INTEGER NOT NULL,
         message TEXT,
         status TEXT DEFAULT 'pending',
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(job_id) REFERENCES jobs(id),
         FOREIGN KEY(journalist_id) REFERENCES users(id)
     )''')
     c.execute('''CREATE TABLE IF NOT EXISTS posts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
         title TEXT,
         description TEXT,
         media_filename TEXT,
         media_type TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        post_type TEXT DEFAULT 'media',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )''')
     conn.commit()
     conn.close()
 
+
 init_db()
 
-def migrate_db():
+ADMIN_EMAIL    = os.environ.get('ADMIN_EMAIL', 'admin@pressjobs.dz')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@2024!')
+
+
+def ensure_admin():
     conn = get_db()
     c = conn.cursor()
-    existing = [row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()]
-    new_cols = [
-        ("last_name",          "TEXT"),
-        ("gender",             "TEXT"),
-        ("civil_status",       "TEXT"),
-        ("specialty",          "TEXT"),
-        ("years_experience",   "TEXT"),
-        ("preferred_channels", "TEXT"),
-        ("extra_skills",       "TEXT"),
-        ("cv_filename",        "TEXT"),
-        ("intro_video",        "TEXT"),
-        ("article_links",      "TEXT"),
-        ("channel_type",       "TEXT"),   
-        ("cover_image",        "TEXT"),   
-    ]
-    for col, coltype in new_cols:
-        if col not in existing:
-            c.execute(f"ALTER TABLE users ADD COLUMN {col} {coltype}")
-    existing_posts = [row[1] for row in c.execute("PRAGMA table_info(posts)").fetchall()]
-    if "post_type" not in existing_posts:
-        c.execute("ALTER TABLE posts ADD COLUMN post_type TEXT DEFAULT 'media'")
-    conn.commit()
+    c.execute('SELECT id FROM users WHERE email=%s', (ADMIN_EMAIL,))
+    exists = c.fetchone()
+    if not exists:
+        c.execute(
+            '''INSERT INTO users (name, email, password, account_type, is_admin)
+               VALUES (%s,%s,%s,%s,1)''',
+            ('مدير النظام', ADMIN_EMAIL, generate_password_hash(ADMIN_PASSWORD), 'admin')
+        )
+        conn.commit()
+    else:
+        c.execute('UPDATE users SET is_admin=1 WHERE email=%s', (ADMIN_EMAIL,))
+        conn.commit()
     conn.close()
 
-migrate_db()
+
+ensure_admin()
+
 
 from flask import send_from_directory
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    """Serve uploads from DATA_DIR (persistent disk on Render, or static/uploads locally)."""
     data_uploads = os.path.join(_DATA_DIR, 'uploads')
     if os.path.exists(os.path.join(data_uploads, filename)):
         return send_from_directory(data_uploads, filename)
     return send_from_directory(os.path.join('static', 'uploads'), filename)
+
 
 @app.route('/')
 def index():
     if 'user_id' in session:
         return redirect(url_for('profile', user_id=session['user_id']))
     conn = get_db()
-    jobs = conn.execute('''
+    c = conn.cursor()
+    c.execute('''
         SELECT jobs.*, users.name as channel_name, users.location as channel_location
         FROM jobs JOIN users ON jobs.channel_id = users.id
         ORDER BY jobs.created_at DESC LIMIT 6
-    ''').fetchall()
-    channels = conn.execute("SELECT * FROM users WHERE account_type='channel' LIMIT 4").fetchall()
-    journalists = conn.execute("SELECT * FROM users WHERE account_type='journalist' LIMIT 6").fetchall()
+    ''')
+    jobs = c.fetchall()
+    c.execute("SELECT * FROM users WHERE account_type='channel' LIMIT 4")
+    channels = c.fetchall()
+    c.execute("SELECT * FROM users WHERE account_type='journalist' LIMIT 6")
+    journalists = c.fetchall()
     conn.close()
     return render_template('index.html', jobs=jobs, channels=channels, journalists=journalists)
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -175,19 +188,23 @@ def register():
         skills       = request.form.get('skills', '')
         education    = request.form.get('education', '')
         specialty    = request.form.get('specialty', '')
-        channel_type = request.form.get('channel_type', '')   
+        channel_type = request.form.get('channel_type', '')
         try:
             conn = get_db()
-            conn.execute('''INSERT INTO users (name, email, password, account_type, location, bio, skills, education, specialty, channel_type)
-                           VALUES (?,?,?,?,?,?,?,?,?,?)''',
-                        (name, email, password, account_type, location, bio, skills, education, specialty, channel_type))
+            c = conn.cursor()
+            c.execute('''INSERT INTO users (name, email, password, account_type, location, bio, skills, education, specialty, channel_type)
+                         VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
+                      (name, email, password, account_type, location, bio, skills, education, specialty, channel_type))
             conn.commit()
             conn.close()
             flash('تم إنشاء حسابك بنجاح! يمكنك تسجيل الدخول الآن', 'success')
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
+        except psycopg2.errors.UniqueViolation:
+            conn.rollback()
+            conn.close()
             flash('البريد الإلكتروني مستخدم بالفعل', 'error')
     return render_template('register.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -197,21 +214,25 @@ def login():
         email    = request.form['email']
         password = request.form['password']
         conn = get_db()
-        user = conn.execute('SELECT * FROM users WHERE email=?', (email,)).fetchone()
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE email=%s', (email,))
+        user = c.fetchone()
         conn.close()
         if user and check_password_hash(user['password'], password):
-            session['user_id']    = user['id']
-            session['user_name']  = user['name']
+            session['user_id']      = user['id']
+            session['user_name']    = user['name']
             session['account_type'] = user['account_type']
             flash(f'مرحباً {user["name"]}!', 'success')
             return redirect(url_for('profile', user_id=user['id']))
         flash('بيانات الدخول غير صحيحة', 'error')
     return render_template('login.html')
 
+
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('index'))
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -219,68 +240,81 @@ def dashboard():
         return redirect(url_for('login'))
     return redirect(url_for('profile', user_id=session['user_id']))
 
+
 @app.route('/job/<int:job_id>/edit', methods=['POST'])
 def edit_job(job_id):
     if 'user_id' not in session or session.get('account_type') != 'channel':
         return redirect(url_for('login'))
     conn = get_db()
-    job = conn.execute('SELECT * FROM jobs WHERE id=? AND channel_id=?', (job_id, session['user_id'])).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT * FROM jobs WHERE id=%s AND channel_id=%s', (job_id, session['user_id']))
+    job = c.fetchone()
     if not job:
         conn.close()
         flash('غير مصرح لك بتعديل هذه الوظيفة', 'error')
         return redirect(url_for('profile', user_id=session['user_id']))
-    conn.execute('''UPDATE jobs SET title=?, description=?, category=?, location=?, job_type=?, salary=?, requirements=?
-                    WHERE id=?''',
-                 (request.form['title'], request.form['description'], request.form['category'],
-                  request.form.get('location',''), request.form.get('job_type',''),
-                  request.form.get('salary',''), request.form.get('requirements',''), job_id))
+    c.execute('''UPDATE jobs SET title=%s, description=%s, category=%s, location=%s, job_type=%s, salary=%s, requirements=%s
+                 WHERE id=%s''',
+              (request.form['title'], request.form['description'], request.form['category'],
+               request.form.get('location',''), request.form.get('job_type',''),
+               request.form.get('salary',''), request.form.get('requirements',''), job_id))
     conn.commit()
     conn.close()
     flash('تم تعديل الوظيفة بنجاح!', 'success')
     return redirect(url_for('profile', user_id=session['user_id']))
+
 
 @app.route('/job/<int:job_id>/delete')
 def delete_job(job_id):
     if 'user_id' not in session or session.get('account_type') != 'channel':
         return redirect(url_for('login'))
     conn = get_db()
-    job = conn.execute('SELECT * FROM jobs WHERE id=? AND channel_id=?', (job_id, session['user_id'])).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT * FROM jobs WHERE id=%s AND channel_id=%s', (job_id, session['user_id']))
+    job = c.fetchone()
     if job:
-        conn.execute('DELETE FROM applications WHERE job_id=?', (job_id,))
-        conn.execute('DELETE FROM jobs WHERE id=?', (job_id,))
+        c.execute('DELETE FROM applications WHERE job_id=%s', (job_id,))
+        c.execute('DELETE FROM jobs WHERE id=%s', (job_id,))
         conn.commit()
         flash('تم حذف الوظيفة نهائياً', 'success')
     conn.close()
     return redirect(url_for('profile', user_id=session['user_id']))
+
 
 @app.route('/jobs')
 def jobs():
     category = request.args.get('category', '')
     search   = request.args.get('search', '')
     conn = get_db()
+    c = conn.cursor()
     query = '''SELECT jobs.*, users.name as channel_name FROM jobs
                JOIN users ON jobs.channel_id = users.id WHERE 1=1'''
     params = []
     if category:
-        query += ' AND jobs.category=?'
+        query += ' AND jobs.category=%s'
         params.append(category)
     if search:
-        query += ' AND (jobs.title LIKE ? OR jobs.description LIKE ?)'
+        query += ' AND (jobs.title ILIKE %s OR jobs.description ILIKE %s)'
         params.extend([f'%{search}%', f'%{search}%'])
     query += ' ORDER BY jobs.created_at DESC'
-    all_jobs = conn.execute(query, params).fetchall()
+    c.execute(query, params)
+    all_jobs = c.fetchall()
     conn.close()
     return render_template('jobs.html', jobs=all_jobs, category=category, search=search)
+
 
 @app.route('/job/<int:job_id>')
 def job_detail(job_id):
     conn = get_db()
-    job = conn.execute('''SELECT jobs.*, users.name as channel_name, users.bio as channel_bio, users.location as channel_location
-                          FROM jobs JOIN users ON jobs.channel_id = users.id WHERE jobs.id=?''', (job_id,)).fetchone()
+    c = conn.cursor()
+    c.execute('''SELECT jobs.*, users.name as channel_name, users.bio as channel_bio, users.location as channel_location
+                 FROM jobs JOIN users ON jobs.channel_id = users.id WHERE jobs.id=%s''', (job_id,))
+    job = c.fetchone()
     conn.close()
     if not job:
         return redirect(url_for('jobs'))
     return render_template('job_detail.html', job=job)
+
 
 @app.route('/apply/<int:job_id>', methods=['POST'])
 def apply(job_id):
@@ -288,11 +322,13 @@ def apply(job_id):
         return redirect(url_for('login'))
     message = request.form.get('message', '')
     conn = get_db()
-    existing = conn.execute('SELECT * FROM applications WHERE job_id=? AND journalist_id=?',
-                           (job_id, session['user_id'])).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT * FROM applications WHERE job_id=%s AND journalist_id=%s',
+              (job_id, session['user_id']))
+    existing = c.fetchone()
     if not existing:
-        conn.execute('INSERT INTO applications (job_id, journalist_id, message) VALUES (?,?,?)',
-                    (job_id, session['user_id'], message))
+        c.execute('INSERT INTO applications (job_id, journalist_id, message) VALUES (%s,%s,%s)',
+                  (job_id, session['user_id'], message))
         conn.commit()
         flash('تم إرسال طلبك بنجاح!', 'success')
     else:
@@ -300,37 +336,41 @@ def apply(job_id):
     conn.close()
     return redirect(url_for('job_detail', job_id=job_id))
 
+
 @app.route('/post-job', methods=['GET', 'POST'])
 def post_job():
     if 'user_id' not in session or session['account_type'] != 'channel':
         return redirect(url_for('login'))
     if request.method == 'POST':
         conn = get_db()
-        conn.execute('''INSERT INTO jobs (channel_id, title, description, category, location, job_type, salary, requirements)
-                       VALUES (?,?,?,?,?,?,?,?)''',
-                    (session['user_id'], request.form['title'], request.form['description'],
-                     request.form['category'], request.form['location'], request.form['job_type'],
-                     request.form.get('salary',''), request.form.get('requirements','')))
+        c = conn.cursor()
+        c.execute('''INSERT INTO jobs (channel_id, title, description, category, location, job_type, salary, requirements)
+                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s)''',
+                  (session['user_id'], request.form['title'], request.form['description'],
+                   request.form['category'], request.form['location'], request.form['job_type'],
+                   request.form.get('salary',''), request.form.get('requirements','')))
         conn.commit()
         conn.close()
         flash('تم نشر الوظيفة بنجاح!', 'success')
         return redirect(url_for('dashboard'))
     return render_template('post_job.html')
 
+
 @app.route('/profile/<int:user_id>')
 def profile(user_id):
     conn = get_db()
-    user = conn.execute('SELECT * FROM users WHERE id=?', (user_id,)).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT * FROM users WHERE id=%s', (user_id,))
+    user = c.fetchone()
     if not user:
         conn.close()
         flash('المستخدم غير موجود', 'error')
         return redirect(url_for('index'))
 
     if user['account_type'] == 'channel':
-        jobs = conn.execute(
-            'SELECT * FROM jobs WHERE channel_id=? ORDER BY created_at DESC', (user_id,)
-        ).fetchall()
-        applications = conn.execute('''
+        c.execute('SELECT * FROM jobs WHERE channel_id=%s ORDER BY created_at DESC', (user_id,))
+        jobs = c.fetchall()
+        c.execute('''
             SELECT applications.*, jobs.title AS job_title,
                    u.name AS applicant_name, u.profile_image AS applicant_image,
                    u.skills, u.education, u.location AS applicant_location,
@@ -338,9 +378,10 @@ def profile(user_id):
             FROM applications
             JOIN jobs ON applications.job_id = jobs.id
             JOIN users u ON applications.journalist_id = u.id
-            WHERE jobs.channel_id = ?
+            WHERE jobs.channel_id = %s
             ORDER BY applications.created_at DESC
-        ''', (user_id,)).fetchall()
+        ''', (user_id,))
+        applications = c.fetchall()
         total_applications = len(applications)
         accepted_count = sum(1 for a in applications if a['status'] == 'accepted')
         job_categories = list({j['category'] for j in jobs})
@@ -350,11 +391,11 @@ def profile(user_id):
             total_applications=total_applications, accepted_count=accepted_count,
             job_categories=job_categories)
 
-    posts = conn.execute(
-        'SELECT * FROM posts WHERE user_id=? ORDER BY created_at DESC', (user_id,)
-    ).fetchall()
+    c.execute('SELECT * FROM posts WHERE user_id=%s ORDER BY created_at DESC', (user_id,))
+    posts = c.fetchall()
     conn.close()
     return render_template('profile.html', user=user, jobs=None, posts=posts)
+
 
 @app.route('/profile/<int:user_id>/update', methods=['POST'])
 def update_profile(user_id):
@@ -398,8 +439,6 @@ def update_profile(user_id):
     cv_filename  = save_file('cv_file',    'cv',    {'.pdf', '.doc', '.docx'})
     intro_video  = save_file('intro_video','introv', ALL_VIDEO)
 
-    # If the user processed a background-replaced video (via the studio panel)
-    # and did NOT re-upload a raw video, use the processed result instead.
     if not intro_video:
         processed_intro = request.form.get('processed_intro_video', '').strip()
         if processed_intro:
@@ -408,7 +447,9 @@ def update_profile(user_id):
                 intro_video = safe_pi
 
     conn = get_db()
-    old = conn.execute('SELECT cv_filename, intro_video FROM users WHERE id=?', (user_id,)).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT cv_filename, intro_video FROM users WHERE id=%s', (user_id,))
+    old = c.fetchone()
 
     for field, new_val in [('cv_filename', cv_filename), ('intro_video', intro_video)]:
         if new_val and old and old[field]:
@@ -416,28 +457,31 @@ def update_profile(user_id):
             if os.path.exists(old_path):
                 os.remove(old_path)
 
-    conn.execute('''UPDATE users SET
-        name=?, last_name=?, location=?, bio=?, gender=?, civil_status=?,
-        specialty=?, years_experience=?, education=?, skills=?,
-        preferred_channels=?, extra_skills=?, article_links=?
-        {cv} {iv}
-        WHERE id=?'''.format(
-            cv=', cv_filename=?' if cv_filename else '',
-            iv=', intro_video=?' if intro_video else ''
-        ),
-        [name, last_name, location, bio, gender, civil_status,
-         specialty, years_experience, education, skills,
-         preferred_channels, extra_skills, article_links]
-        + ([cv_filename] if cv_filename else [])
-        + ([intro_video] if intro_video else [])
-        + [user_id]
-    )
+    set_parts = [
+        'name=%s', 'last_name=%s', 'location=%s', 'bio=%s', 'gender=%s', 'civil_status=%s',
+        'specialty=%s', 'years_experience=%s', 'education=%s', 'skills=%s',
+        'preferred_channels=%s', 'extra_skills=%s', 'article_links=%s'
+    ]
+    values = [name, last_name, location, bio, gender, civil_status,
+              specialty, years_experience, education, skills,
+              preferred_channels, extra_skills, article_links]
+
+    if cv_filename:
+        set_parts.append('cv_filename=%s')
+        values.append(cv_filename)
+    if intro_video:
+        set_parts.append('intro_video=%s')
+        values.append(intro_video)
+    values.append(user_id)
+
+    c.execute(f'UPDATE users SET {", ".join(set_parts)} WHERE id=%s', values)
     conn.commit()
     conn.close()
 
     session['user_name'] = name
     flash('تم تحديث معلومات الملف الشخصي بنجاح!', 'success')
     return redirect(url_for('profile', user_id=user_id))
+
 
 @app.route('/profile/<int:user_id>/upload-picture', methods=['POST'])
 def upload_picture(user_id):
@@ -456,18 +500,21 @@ def upload_picture(user_id):
         flash('صيغة الصورة غير مدعومة', 'error')
         return redirect(url_for('profile', user_id=user_id))
     conn = get_db()
-    old = conn.execute('SELECT profile_image FROM users WHERE id=?', (user_id,)).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT profile_image FROM users WHERE id=%s', (user_id,))
+    old = c.fetchone()
     if old and old['profile_image']:
         old_path = os.path.join(UPLOAD_FOLDER, old['profile_image'])
         if os.path.exists(old_path):
             os.remove(old_path)
     unique_name = f"avatar_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
     file.save(os.path.join(UPLOAD_FOLDER, unique_name))
-    conn.execute('UPDATE users SET profile_image=? WHERE id=?', (unique_name, user_id))
+    c.execute('UPDATE users SET profile_image=%s WHERE id=%s', (unique_name, user_id))
     conn.commit()
     conn.close()
     flash('تم تحديث صورة الملف الشخصي بنجاح!', 'success')
     return redirect(url_for('profile', user_id=user_id))
+
 
 @app.route('/profile/<int:user_id>/post', methods=['POST'])
 def create_post(user_id):
@@ -509,13 +556,15 @@ def create_post(user_id):
                 media_filename = unique_name
 
     conn = get_db()
-    conn.execute('''INSERT INTO posts (user_id, title, description, media_filename, media_type)
-                    VALUES (?, ?, ?, ?, ?)''',
-                 (user_id, title, description, media_filename, media_type))
+    c = conn.cursor()
+    c.execute('''INSERT INTO posts (user_id, title, description, media_filename, media_type)
+                 VALUES (%s, %s, %s, %s, %s)''',
+              (user_id, title, description, media_filename, media_type))
     conn.commit()
     conn.close()
     flash('تم نشر المحتوى بنجاح!', 'success')
     return redirect(url_for('profile', user_id=user_id))
+
 
 @app.route('/channel/<int:channel_id>/update', methods=['POST'])
 def update_channel(channel_id):
@@ -525,13 +574,15 @@ def update_channel(channel_id):
     location = request.form.get('location', '').strip()
     bio      = request.form.get('bio', '').strip()
     conn = get_db()
-    conn.execute('UPDATE users SET name=?, location=?, bio=? WHERE id=?',
-                 (name, location, bio, channel_id))
+    c = conn.cursor()
+    c.execute('UPDATE users SET name=%s, location=%s, bio=%s WHERE id=%s',
+              (name, location, bio, channel_id))
     conn.commit()
     conn.close()
     session['user_name'] = name
     flash('تم تحديث معلومات القناة بنجاح!', 'success')
     return redirect(url_for('profile', user_id=channel_id))
+
 
 @app.route('/channel/<int:channel_id>/upload-picture', methods=['POST'])
 def upload_channel_picture(channel_id):
@@ -550,18 +601,21 @@ def upload_channel_picture(channel_id):
         flash('صيغة الصورة غير مدعومة', 'error')
         return redirect(url_for('profile', user_id=channel_id))
     conn = get_db()
-    old = conn.execute('SELECT profile_image FROM users WHERE id=?', (channel_id,)).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT profile_image FROM users WHERE id=%s', (channel_id,))
+    old = c.fetchone()
     if old and old['profile_image']:
         old_path = os.path.join(UPLOAD_FOLDER, old['profile_image'])
         if os.path.exists(old_path):
             os.remove(old_path)
     unique_name = f"avatar_{channel_id}_{int(datetime.utcnow().timestamp())}{ext}"
     file.save(os.path.join(UPLOAD_FOLDER, unique_name))
-    conn.execute('UPDATE users SET profile_image=? WHERE id=?', (unique_name, channel_id))
+    c.execute('UPDATE users SET profile_image=%s WHERE id=%s', (unique_name, channel_id))
     conn.commit()
     conn.close()
     flash('تم تحديث شعار القناة بنجاح!', 'success')
     return redirect(url_for('profile', user_id=channel_id))
+
 
 @app.route('/channel/<int:channel_id>/upload-cover', methods=['POST'])
 def upload_channel_cover(channel_id):
@@ -580,103 +634,81 @@ def upload_channel_cover(channel_id):
         flash('صيغة الصورة غير مدعومة', 'error')
         return redirect(url_for('profile', user_id=channel_id))
     conn = get_db()
-    old = conn.execute('SELECT cover_image FROM users WHERE id=?', (channel_id,)).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT cover_image FROM users WHERE id=%s', (channel_id,))
+    old = c.fetchone()
     if old and old['cover_image']:
         old_path = os.path.join(UPLOAD_FOLDER, old['cover_image'])
         if os.path.exists(old_path):
             os.remove(old_path)
     unique_name = f"cover_{channel_id}_{int(datetime.utcnow().timestamp())}{ext}"
     file.save(os.path.join(UPLOAD_FOLDER, unique_name))
-    conn.execute('UPDATE users SET cover_image=? WHERE id=?', (unique_name, channel_id))
+    c.execute('UPDATE users SET cover_image=%s WHERE id=%s', (unique_name, channel_id))
     conn.commit()
     conn.close()
     flash('تم تحديث صورة الغلاف بنجاح!', 'success')
     return redirect(url_for('profile', user_id=channel_id))
 
+
 @app.route('/channels')
 def channels():
     conn = get_db()
+    c = conn.cursor()
     search       = request.args.get('search', '')
-    channel_type = request.args.get('type', '')  
+    channel_type = request.args.get('type', '')
     query  = "SELECT * FROM users WHERE account_type='channel'"
     params = []
     if channel_type:
-        query += ' AND channel_type=?'
+        query += ' AND channel_type=%s'
         params.append(channel_type)
     if search:
-        query += ' AND (name LIKE ? OR location LIKE ? OR bio LIKE ?)'
+        query += ' AND (name ILIKE %s OR location ILIKE %s OR bio ILIKE %s)'
         params += [f'%{search}%', f'%{search}%', f'%{search}%']
     query += ' ORDER BY created_at DESC'
-    all_channels = conn.execute(query, params).fetchall()
+    c.execute(query, params)
+    all_channels = c.fetchall()
     job_counts = {}
     for ch in all_channels:
-        count = conn.execute('SELECT COUNT(*) FROM jobs WHERE channel_id=?', (ch['id'],)).fetchone()[0]
-        job_counts[ch['id']] = count
+        c.execute('SELECT COUNT(*) FROM jobs WHERE channel_id=%s', (ch['id'],))
+        job_counts[ch['id']] = c.fetchone()['count']
     conn.close()
     return render_template('channels.html', channels=all_channels, job_counts=job_counts,
                            search=search, channel_type=channel_type)
 
+
 @app.route('/journalists')
 def journalists():
     conn = get_db()
+    c = conn.cursor()
     category = request.args.get('category', '')
     search   = request.args.get('search', '')
     query  = "SELECT * FROM users WHERE account_type='journalist'"
     params = []
     if category:
-        query += ' AND specialty LIKE ?'
+        query += ' AND specialty ILIKE %s'
         params.append(f'%{category}%')
     if search:
-        query += ' AND (name LIKE ? OR skills LIKE ? OR location LIKE ?)'
+        query += ' AND (name ILIKE %s OR skills ILIKE %s OR location ILIKE %s)'
         params += [f'%{search}%', f'%{search}%', f'%{search}%']
     query += ' ORDER BY created_at DESC'
-    users = conn.execute(query, params).fetchall()
+    c.execute(query, params)
+    users = c.fetchall()
     conn.close()
     return render_template('journalists.html', journalists=users, category=category, search=search)
+
 
 @app.route('/update-application/<int:app_id>/<status>')
 def update_application(app_id, status):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     conn = get_db()
-    conn.execute('UPDATE applications SET status=? WHERE id=?', (status, app_id))
+    c = conn.cursor()
+    c.execute('UPDATE applications SET status=%s WHERE id=%s', (status, app_id))
     conn.commit()
     conn.close()
     flash('تم تحديث حالة الطلب', 'success')
     return redirect(url_for('profile', user_id=session['user_id']))
 
-
-
-def migrate_admin():
-    conn = get_db()
-    c = conn.cursor()
-    cols = [row[1] for row in c.execute("PRAGMA table_info(users)").fetchall()]
-    if 'is_admin' not in cols:
-        c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
-        conn.commit()
-    conn.close()
-
-migrate_admin()
-
-ADMIN_EMAIL    = os.environ.get('ADMIN_EMAIL', 'admin@pressjobs.dz')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Admin@2024!')
-
-def ensure_admin():
-    conn = get_db()
-    exists = conn.execute('SELECT id FROM users WHERE email=?', (ADMIN_EMAIL,)).fetchone()
-    if not exists:
-        conn.execute(
-            '''INSERT INTO users (name, email, password, account_type, is_admin)
-               VALUES (?,?,?,?,1)''',
-            ('مدير النظام', ADMIN_EMAIL, generate_password_hash(ADMIN_PASSWORD), 'admin')
-        )
-        conn.commit()
-    else:
-        conn.execute('UPDATE users SET is_admin=1 WHERE email=?', (ADMIN_EMAIL,))
-        conn.commit()
-    conn.close()
-
-ensure_admin()
 
 def admin_required(f):
     from functools import wraps
@@ -689,8 +721,6 @@ def admin_required(f):
     return decorated
 
 
-
-
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if session.get('is_admin'):
@@ -699,7 +729,9 @@ def admin_login():
         email    = request.form['email']
         password = request.form['password']
         conn = get_db()
-        user = conn.execute('SELECT * FROM users WHERE email=? AND is_admin=1', (email,)).fetchone()
+        c = conn.cursor()
+        c.execute('SELECT * FROM users WHERE email=%s AND is_admin=1', (email,))
+        user = c.fetchone()
         conn.close()
         if user and check_password_hash(user['password'], password):
             session['user_id']   = user['id']
@@ -711,42 +743,41 @@ def admin_login():
     return render_template('admin_login.html')
 
 
-
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
     conn = get_db()
-    total_journalists = conn.execute("SELECT COUNT(*) FROM users WHERE account_type='journalist'").fetchone()[0]
-    total_channels    = conn.execute("SELECT COUNT(*) FROM users WHERE account_type='channel'").fetchone()[0]
-    total_jobs        = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
-    total_apps        = conn.execute("SELECT COUNT(*) FROM applications").fetchone()[0]
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM users WHERE account_type='journalist'")
+    total_journalists = c.fetchone()['count']
+    c.execute("SELECT COUNT(*) FROM users WHERE account_type='channel'")
+    total_channels = c.fetchone()['count']
+    c.execute("SELECT COUNT(*) FROM jobs")
+    total_jobs = c.fetchone()['count']
+    c.execute("SELECT COUNT(*) FROM applications")
+    total_apps = c.fetchone()['count']
 
-    journalists = conn.execute(
-        "SELECT * FROM users WHERE account_type='journalist' ORDER BY created_at DESC"
-    ).fetchall()
-    channels = conn.execute(
-        "SELECT * FROM users WHERE account_type='channel' ORDER BY created_at DESC"
-    ).fetchall()
+    c.execute("SELECT * FROM users WHERE account_type='journalist' ORDER BY created_at DESC")
+    journalists = c.fetchall()
+    c.execute("SELECT * FROM users WHERE account_type='channel' ORDER BY created_at DESC")
+    channels = c.fetchall()
 
     job_counts = {}
     for ch in channels:
-        job_counts[ch['id']] = conn.execute(
-            'SELECT COUNT(*) FROM jobs WHERE channel_id=?', (ch['id'],)
-        ).fetchone()[0]
+        c.execute('SELECT COUNT(*) FROM jobs WHERE channel_id=%s', (ch['id'],))
+        job_counts[ch['id']] = c.fetchone()['count']
 
     app_counts = {}
     for j in journalists:
-        app_counts[j['id']] = conn.execute(
-            'SELECT COUNT(*) FROM applications WHERE journalist_id=?', (j['id'],)
-        ).fetchone()[0]
+        c.execute('SELECT COUNT(*) FROM applications WHERE journalist_id=%s', (j['id'],))
+        app_counts[j['id']] = c.fetchone()['count']
 
-    recent_jobs = conn.execute(
-        '''SELECT jobs.*, users.name as channel_name
-           FROM jobs JOIN users ON jobs.channel_id = users.id
-           ORDER BY jobs.created_at DESC LIMIT 10'''
-    ).fetchall()
-
+    c.execute('''SELECT jobs.*, users.name as channel_name
+                 FROM jobs JOIN users ON jobs.channel_id = users.id
+                 ORDER BY jobs.created_at DESC LIMIT 10''')
+    recent_jobs = c.fetchall()
     conn.close()
+
     return render_template('admin_dashboard.html',
         total_journalists=total_journalists,
         total_channels=total_channels,
@@ -760,81 +791,82 @@ def admin_dashboard():
     )
 
 
-
 @app.route('/admin/delete/journalist/<int:user_id>', methods=['POST'])
 @admin_required
 def admin_delete_journalist(user_id):
     conn = get_db()
-    user = conn.execute('SELECT * FROM users WHERE id=? AND account_type=?',
-                        (user_id, 'journalist')).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT * FROM users WHERE id=%s AND account_type=%s', (user_id, 'journalist'))
+    user = c.fetchone()
     if not user:
         flash('الصحفي غير موجود', 'error')
         conn.close()
         return redirect(url_for('admin_dashboard'))
 
     for field in ('profile_image', 'cv_filename', 'intro_video'):
-        fname = user[field] if field in user.keys() else None
+        fname = user.get(field)
         if fname:
             fpath = os.path.join(UPLOAD_FOLDER, fname)
             if os.path.exists(fpath):
                 os.remove(fpath)
 
-    posts = conn.execute('SELECT media_filename FROM posts WHERE user_id=?', (user_id,)).fetchall()
+    c.execute('SELECT media_filename FROM posts WHERE user_id=%s', (user_id,))
+    posts = c.fetchall()
     for p in posts:
         if p['media_filename']:
             fpath = os.path.join(UPLOAD_FOLDER, p['media_filename'])
             if os.path.exists(fpath):
                 os.remove(fpath)
 
-    conn.execute('DELETE FROM applications WHERE journalist_id=?', (user_id,))
-    conn.execute('DELETE FROM posts WHERE user_id=?', (user_id,))
-    conn.execute('DELETE FROM users WHERE id=?', (user_id,))
+    c.execute('DELETE FROM applications WHERE journalist_id=%s', (user_id,))
+    c.execute('DELETE FROM posts WHERE user_id=%s', (user_id,))
+    c.execute('DELETE FROM users WHERE id=%s', (user_id,))
     conn.commit()
     conn.close()
     flash(f'تم حذف حساب الصحفي "{user["name"]}" بنجاح', 'success')
     return redirect(url_for('admin_dashboard') + '#journalists')
 
 
-
 @app.route('/admin/delete/channel/<int:channel_id>', methods=['POST'])
 @admin_required
 def admin_delete_channel(channel_id):
     conn = get_db()
-    channel = conn.execute('SELECT * FROM users WHERE id=? AND account_type=?',
-                           (channel_id, 'channel')).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT * FROM users WHERE id=%s AND account_type=%s', (channel_id, 'channel'))
+    channel = c.fetchone()
     if not channel:
         flash('القناة غير موجودة', 'error')
         conn.close()
         return redirect(url_for('admin_dashboard'))
 
-    if channel['profile_image']:
+    if channel.get('profile_image'):
         fpath = os.path.join(UPLOAD_FOLDER, channel['profile_image'])
         if os.path.exists(fpath):
             os.remove(fpath)
 
-    jobs = conn.execute('SELECT id FROM jobs WHERE channel_id=?', (channel_id,)).fetchall()
+    c.execute('SELECT id FROM jobs WHERE channel_id=%s', (channel_id,))
+    jobs = c.fetchall()
     for job in jobs:
-        conn.execute('DELETE FROM applications WHERE job_id=?', (job['id'],))
-    conn.execute('DELETE FROM jobs WHERE channel_id=?', (channel_id,))
-    conn.execute('DELETE FROM users WHERE id=?', (channel_id,))
+        c.execute('DELETE FROM applications WHERE job_id=%s', (job['id'],))
+    c.execute('DELETE FROM jobs WHERE channel_id=%s', (channel_id,))
+    c.execute('DELETE FROM users WHERE id=%s', (channel_id,))
     conn.commit()
     conn.close()
     flash(f'تم حذف حساب القناة "{channel["name"]}" وجميع وظائفها بنجاح', 'success')
     return redirect(url_for('admin_dashboard') + '#channels')
 
 
-
 @app.route('/admin/delete/job/<int:job_id>', methods=['POST'])
 @admin_required
 def admin_delete_job(job_id):
     conn = get_db()
-    conn.execute('DELETE FROM applications WHERE job_id=?', (job_id,))
-    conn.execute('DELETE FROM jobs WHERE id=?', (job_id,))
+    c = conn.cursor()
+    c.execute('DELETE FROM applications WHERE job_id=%s', (job_id,))
+    c.execute('DELETE FROM jobs WHERE id=%s', (job_id,))
     conn.commit()
     conn.close()
     flash('تم حذف الوظيفة بنجاح', 'success')
     return redirect(url_for('admin_dashboard') + '#jobs')
-
 
 
 @app.route('/admin/logout')
@@ -843,10 +875,8 @@ def admin_logout():
     return redirect(url_for('admin_login'))
 
 
-
 @app.route('/profile/<int:user_id>/process-intro-bg', methods=['POST'])
 def process_intro_bg(user_id):
-    """Start BG replacement for the intro video (edit-profile tab)."""
     if 'user_id' not in session or session['user_id'] != user_id:
         return jsonify({'error': 'غير مصرح'}), 401
     return _handle_process_bg()
@@ -854,7 +884,6 @@ def process_intro_bg(user_id):
 
 @app.route('/profile/<int:user_id>/confirm-intro-bg', methods=['POST'])
 def confirm_intro_bg(user_id):
-    """After processing is done, save the result as the user's intro_video."""
     if 'user_id' not in session or session['user_id'] != user_id:
         return jsonify({'error': 'غير مصرح'}), 401
 
@@ -867,13 +896,15 @@ def confirm_intro_bg(user_id):
         return jsonify({'error': 'الملف المعالج غير موجود'}), 404
 
     conn = get_db()
-    old = conn.execute('SELECT intro_video FROM users WHERE id=?', (user_id,)).fetchone()
+    c = conn.cursor()
+    c.execute('SELECT intro_video FROM users WHERE id=%s', (user_id,))
+    old = c.fetchone()
     if old and old['intro_video']:
         old_path = os.path.join(UPLOAD_FOLDER, old['intro_video'])
         if os.path.exists(old_path):
             try: os.remove(old_path)
             except Exception: pass
-    conn.execute('UPDATE users SET intro_video=? WHERE id=?', (safe, user_id))
+    c.execute('UPDATE users SET intro_video=%s WHERE id=%s', (safe, user_id))
     conn.commit()
     conn.close()
     return jsonify({'ok': True, 'filename': safe})
@@ -881,16 +912,12 @@ def confirm_intro_bg(user_id):
 
 @app.route('/api/process-bg', methods=['POST'])
 def api_process_bg():
-    """Start BG replacement for a post video."""
     if 'user_id' not in session:
         return jsonify({'error': 'غير مصرح'}), 401
     return _handle_process_bg()
 
 
 def _handle_process_bg():
-    """
-    Shared logic: receive video + studio_image, launch thread, return task_id.
-    """
     user_id   = session['user_id']
     IMAGE_EXT = {'.jpg', '.jpeg', '.png', '.webp'}
     ALL_VIDEO = {'.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv', '.wmv', '.m4v', '.3gp', '.ogv'}
@@ -940,7 +967,6 @@ def _handle_process_bg():
 
 @app.route('/api/process-bg/status/<task_id>')
 def api_process_bg_status(task_id):
-    """Poll processing status."""
     with _bg_jobs_lock:
         job = dict(_bg_jobs.get(task_id, {}))
     if not job:
@@ -949,15 +975,6 @@ def api_process_bg_status(task_id):
 
 
 def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
-    """
-    MediaPipe selfie segmentation background replacement.
-
-    Correct blending in float32 [0-1]:
-        output = fg * mask + bg * (1 - mask)
-
-    Converting to float32 before multiplying avoids uint8 overflow.
-    Audio is restored from the original via ffmpeg.
-    """
     try:
         with _bg_jobs_lock:
             _bg_jobs[task_id]['status'] = 'processing'
@@ -969,7 +986,6 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
         from mediapipe.tasks.python import vision
         from mediapipe.tasks.python.core import base_options as bo
 
-        # Download the selfie segmentation model if not already present
         model_path = os.path.join(_DATA_DIR, 'selfie_segmenter.tflite')
         if not os.path.exists(model_path):
             urllib.request.urlretrieve(
@@ -997,7 +1013,6 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
         if not writer.isOpened():
             raise RuntimeError("VideoWriter could not be opened")
 
-        # New Tasks API segmenter
         options = vision.ImageSegmenterOptions(
             base_options=bo.BaseOptions(model_asset_path=model_path),
             output_category_mask=True
@@ -1013,13 +1028,10 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
             mp_image  = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             result    = segmenter.segment(mp_image)
             mask      = result.category_mask.numpy_view().astype(np.float32)
-            # category_mask from MediaPipe selfie segmenter: 0 = person, 1 = background
-            # We want mask=1 where the PERSON is, so we INVERT: person pixels have category 0
-            mask      = (mask < 0.5).astype(np.float32)   # 1.0 = person, 0.0 = background
+            mask      = (mask < 0.5).astype(np.float32)
             mask      = cv2.GaussianBlur(mask, (21, 21), 0)
             mask_3ch  = np.stack([mask] * 3, axis=-1)
             fg_f32    = frame.astype(np.float32) / 255.0
-            # Blend: keep person pixels from original frame, replace background with studio image
             blended   = fg_f32 * mask_3ch + bg_f32 * (1.0 - mask_3ch)
             writer.write(np.clip(blended * 255.0, 0, 255).astype(np.uint8))
             frame_idx += 1
@@ -1033,14 +1045,11 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
         with _bg_jobs_lock:
             _bg_jobs[task_id]['progress'] = 90
 
-        # Check ffmpeg is available
         ffmpeg_check = subprocess.run(['ffmpeg', '-version'], capture_output=True)
         if ffmpeg_check.returncode != 0:
-            # ffmpeg not found — rename raw file as output (no audio)
             import shutil
             shutil.move(raw_path, output_path)
         else:
-            # Check if original video has an audio stream
             probe = subprocess.run(
                 ['ffprobe', '-v', 'error', '-select_streams', 'a',
                  '-show_entries', 'stream=codec_type', '-of', 'csv=p=0', fg_path],
