@@ -8,6 +8,9 @@ import subprocess
 import threading
 import uuid
 from datetime import datetime
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'pressjobs_secret_2024')
@@ -21,28 +24,69 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL environment variable is not set.")
 
+# ── Cloudinary configuration ──────────────────────────────────────────────────
+cloudinary.config(
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+    secure=True
+)
+
 _bg_jobs      = {}
 _bg_jobs_lock = threading.Lock()
 
 
-def convert_to_mp4(src_path):
-    base = os.path.splitext(src_path)[0]
-    out_path = base + '_c.mp4'
+# ── Cloudinary helpers ────────────────────────────────────────────────────────
+
+def cloudinary_upload(file_storage, resource_type='auto', folder='pressjobs'):
+    """Upload a FileStorage object to Cloudinary and return the secure URL."""
     try:
-        result = subprocess.run([
-            'ffmpeg', '-y', '-i', src_path,
-            '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
-            '-c:a', 'aac', '-b:a', '128k',
-            '-movflags', '+faststart',
-            out_path
-        ], capture_output=True, timeout=300)
-        if result.returncode == 0 and os.path.exists(out_path):
-            os.remove(src_path)
-            return out_path
+        result = cloudinary.uploader.upload(
+            file_storage,
+            resource_type=resource_type,
+            folder=folder
+        )
+        return result.get('secure_url')
+    except Exception as e:
+        print(f"Cloudinary upload error: {e}")
+        return None
+
+
+def cloudinary_upload_path(file_path, resource_type='auto', folder='pressjobs'):
+    """Upload a local file path to Cloudinary and return the secure URL."""
+    try:
+        result = cloudinary.uploader.upload(
+            file_path,
+            resource_type=resource_type,
+            folder=folder
+        )
+        return result.get('secure_url')
+    except Exception as e:
+        print(f"Cloudinary upload error: {e}")
+        return None
+
+
+def cloudinary_delete_by_url(url):
+    """Delete a Cloudinary asset by its URL (best-effort, silent on error)."""
+    if not url or 'cloudinary.com' not in url:
+        return
+    try:
+        # Extract public_id from URL:
+        # e.g. https://res.cloudinary.com/<cloud>/image/upload/v123/pressjobs/filename
+        parts = url.split('/upload/')
+        if len(parts) == 2:
+            public_id_with_ext = parts[1]
+            # Strip version segment if present (v123/)
+            if public_id_with_ext.startswith('v') and '/' in public_id_with_ext:
+                public_id_with_ext = public_id_with_ext.split('/', 1)[1]
+            # Strip extension
+            public_id = os.path.splitext(public_id_with_ext)[0]
+            cloudinary.uploader.destroy(public_id, resource_type='auto')
     except Exception:
         pass
-    return src_path
 
+
+# ── Database ──────────────────────────────────────────────────────────────────
 
 def get_db():
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
@@ -144,6 +188,8 @@ def ensure_admin():
 ensure_admin()
 
 
+# ── File serving (local fallback, mostly unused when Cloudinary is active) ────
+
 from flask import send_from_directory
 
 @app.route('/uploads/<path:filename>')
@@ -153,6 +199,8 @@ def uploaded_file(filename):
         return send_from_directory(data_uploads, filename)
     return send_from_directory(os.path.join('static', 'uploads'), filename)
 
+
+# ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
@@ -417,9 +465,9 @@ def update_profile(user_id):
     article_links     = request.form.get('article_links', '').strip()
 
     ALL_VIDEO = {'.mp4','.webm','.mov','.avi','.mkv','.flv','.wmv','.m4v','.3gp','.ogv','.ts','.mts','.m2ts'}
-    IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif'}
 
-    def save_file(field, prefix, allowed):
+    def upload_file_to_cloudinary(field, allowed, resource_type='auto'):
+        """Upload a form file field to Cloudinary, return the URL or None."""
         if field not in request.files:
             return None
         f = request.files[field]
@@ -428,34 +476,31 @@ def update_profile(user_id):
         ext = os.path.splitext(secure_filename(f.filename))[1].lower()
         if ext not in allowed:
             return None
-        uname = f"{prefix}_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
-        full_path = os.path.join(UPLOAD_FOLDER, uname)
-        f.save(full_path)
-        if ext in ALL_VIDEO and ext != '.mp4':
-            converted = convert_to_mp4(full_path)
-            uname = os.path.basename(converted)
-        return uname
+        url = cloudinary_upload(f, resource_type=resource_type)
+        return url
 
-    cv_filename  = save_file('cv_file',    'cv',    {'.pdf', '.doc', '.docx'})
-    intro_video  = save_file('intro_video','introv', ALL_VIDEO)
+    cv_url     = upload_file_to_cloudinary('cv_file',    {'.pdf', '.doc', '.docx'}, resource_type='raw')
+    intro_url  = upload_file_to_cloudinary('intro_video', ALL_VIDEO, resource_type='video')
 
-    if not intro_video:
+    # Fallback: processed intro video already on disk → upload to Cloudinary
+    if not intro_url:
         processed_intro = request.form.get('processed_intro_video', '').strip()
         if processed_intro:
             safe_pi = secure_filename(processed_intro)
-            if os.path.exists(os.path.join(UPLOAD_FOLDER, safe_pi)):
-                intro_video = safe_pi
+            local_path = os.path.join(UPLOAD_FOLDER, safe_pi)
+            if os.path.exists(local_path):
+                intro_url = cloudinary_upload_path(local_path, resource_type='video')
 
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT cv_filename, intro_video FROM users WHERE id=%s', (user_id,))
     old = c.fetchone()
 
-    for field, new_val in [('cv_filename', cv_filename), ('intro_video', intro_video)]:
-        if new_val and old and old[field]:
-            old_path = os.path.join(UPLOAD_FOLDER, old[field])
-            if os.path.exists(old_path):
-                os.remove(old_path)
+    # Delete old Cloudinary assets when replaced
+    if cv_url and old and old['cv_filename']:
+        cloudinary_delete_by_url(old['cv_filename'])
+    if intro_url and old and old['intro_video']:
+        cloudinary_delete_by_url(old['intro_video'])
 
     set_parts = [
         'name=%s', 'last_name=%s', 'location=%s', 'bio=%s', 'gender=%s', 'civil_status=%s',
@@ -466,12 +511,12 @@ def update_profile(user_id):
               specialty, years_experience, education, skills,
               preferred_channels, extra_skills, article_links]
 
-    if cv_filename:
+    if cv_url:
         set_parts.append('cv_filename=%s')
-        values.append(cv_filename)
-    if intro_video:
+        values.append(cv_url)
+    if intro_url:
         set_parts.append('intro_video=%s')
-        values.append(intro_video)
+        values.append(intro_url)
     values.append(user_id)
 
     c.execute(f'UPDATE users SET {", ".join(set_parts)} WHERE id=%s', values)
@@ -499,17 +544,21 @@ def upload_picture(user_id):
     if ext not in IMAGE_EXT:
         flash('صيغة الصورة غير مدعومة', 'error')
         return redirect(url_for('profile', user_id=user_id))
+
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT profile_image FROM users WHERE id=%s', (user_id,))
     old = c.fetchone()
     if old and old['profile_image']:
-        old_path = os.path.join(UPLOAD_FOLDER, old['profile_image'])
-        if os.path.exists(old_path):
-            os.remove(old_path)
-    unique_name = f"avatar_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
-    file.save(os.path.join(UPLOAD_FOLDER, unique_name))
-    c.execute('UPDATE users SET profile_image=%s WHERE id=%s', (unique_name, user_id))
+        cloudinary_delete_by_url(old['profile_image'])
+
+    url = cloudinary_upload(file, resource_type='image')
+    if not url:
+        flash('فشل رفع الصورة، حاول مرة أخرى', 'error')
+        conn.close()
+        return redirect(url_for('profile', user_id=user_id))
+
+    c.execute('UPDATE users SET profile_image=%s WHERE id=%s', (url, user_id))
     conn.commit()
     conn.close()
     flash('تم تحديث صورة الملف الشخصي بنجاح!', 'success')
@@ -523,43 +572,40 @@ def create_post(user_id):
 
     title       = request.form.get('title', '').strip()
     description = request.form.get('description', '').strip()
-    media_filename = None
+    media_url      = None
     media_type     = None
 
     VIDEO_EXT = {'.mp4','.webm','.mov','.avi','.mkv','.flv','.wmv','.m4v','.3gp','.ogv','.ts','.mts','.m2ts'}
     IMAGE_EXT = {'.jpg','.jpeg','.png','.webp','.gif','.bmp','.tiff','.tif','.heic','.heif','.avif','.jfif','.svg'}
 
+    # Processed (background-replaced) video already on disk → upload to Cloudinary
     processed_video = request.form.get('processed_video', '').strip()
     if processed_video:
         safe_name = secure_filename(processed_video)
-        if os.path.exists(os.path.join(UPLOAD_FOLDER, safe_name)):
-            media_filename = safe_name
-            media_type     = 'video'
+        local_path = os.path.join(UPLOAD_FOLDER, safe_name)
+        if os.path.exists(local_path):
+            media_url  = cloudinary_upload_path(local_path, resource_type='video')
+            media_type = 'video'
 
-    if not media_filename and 'media' in request.files:
+    if not media_url and 'media' in request.files:
         file = request.files['media']
         if file and file.filename:
-            filename    = secure_filename(file.filename)
-            ext         = os.path.splitext(filename)[1].lower()
-            unique_name = f"post_{user_id}_{int(datetime.utcnow().timestamp())}{ext}"
-            file_path   = os.path.join(UPLOAD_FOLDER, unique_name)
-            file.save(file_path)
+            ext = os.path.splitext(secure_filename(file.filename))[1].lower()
             if ext in VIDEO_EXT:
                 media_type = 'video'
-                converted  = convert_to_mp4(file_path)
-                media_filename = os.path.basename(converted)
+                media_url  = cloudinary_upload(file, resource_type='video')
             elif ext in IMAGE_EXT:
-                media_type     = 'image'
-                media_filename = unique_name
+                media_type = 'image'
+                media_url  = cloudinary_upload(file, resource_type='image')
             else:
-                media_type     = 'other'
-                media_filename = unique_name
+                media_type = 'other'
+                media_url  = cloudinary_upload(file, resource_type='raw')
 
     conn = get_db()
     c = conn.cursor()
     c.execute('''INSERT INTO posts (user_id, title, description, media_filename, media_type)
                  VALUES (%s, %s, %s, %s, %s)''',
-              (user_id, title, description, media_filename, media_type))
+              (user_id, title, description, media_url, media_type))
     conn.commit()
     conn.close()
     flash('تم نشر المحتوى بنجاح!', 'success')
@@ -600,17 +646,21 @@ def upload_channel_picture(channel_id):
     if ext not in IMAGE_EXT:
         flash('صيغة الصورة غير مدعومة', 'error')
         return redirect(url_for('profile', user_id=channel_id))
+
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT profile_image FROM users WHERE id=%s', (channel_id,))
     old = c.fetchone()
     if old and old['profile_image']:
-        old_path = os.path.join(UPLOAD_FOLDER, old['profile_image'])
-        if os.path.exists(old_path):
-            os.remove(old_path)
-    unique_name = f"avatar_{channel_id}_{int(datetime.utcnow().timestamp())}{ext}"
-    file.save(os.path.join(UPLOAD_FOLDER, unique_name))
-    c.execute('UPDATE users SET profile_image=%s WHERE id=%s', (unique_name, channel_id))
+        cloudinary_delete_by_url(old['profile_image'])
+
+    url = cloudinary_upload(file, resource_type='image')
+    if not url:
+        flash('فشل رفع الصورة، حاول مرة أخرى', 'error')
+        conn.close()
+        return redirect(url_for('profile', user_id=channel_id))
+
+    c.execute('UPDATE users SET profile_image=%s WHERE id=%s', (url, channel_id))
     conn.commit()
     conn.close()
     flash('تم تحديث شعار القناة بنجاح!', 'success')
@@ -633,17 +683,21 @@ def upload_channel_cover(channel_id):
     if ext not in IMAGE_EXT:
         flash('صيغة الصورة غير مدعومة', 'error')
         return redirect(url_for('profile', user_id=channel_id))
+
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT cover_image FROM users WHERE id=%s', (channel_id,))
     old = c.fetchone()
     if old and old['cover_image']:
-        old_path = os.path.join(UPLOAD_FOLDER, old['cover_image'])
-        if os.path.exists(old_path):
-            os.remove(old_path)
-    unique_name = f"cover_{channel_id}_{int(datetime.utcnow().timestamp())}{ext}"
-    file.save(os.path.join(UPLOAD_FOLDER, unique_name))
-    c.execute('UPDATE users SET cover_image=%s WHERE id=%s', (unique_name, channel_id))
+        cloudinary_delete_by_url(old['cover_image'])
+
+    url = cloudinary_upload(file, resource_type='image')
+    if not url:
+        flash('فشل رفع الصورة، حاول مرة أخرى', 'error')
+        conn.close()
+        return redirect(url_for('profile', user_id=channel_id))
+
+    c.execute('UPDATE users SET cover_image=%s WHERE id=%s', (url, channel_id))
     conn.commit()
     conn.close()
     flash('تم تحديث صورة الغلاف بنجاح!', 'success')
@@ -803,20 +857,14 @@ def admin_delete_journalist(user_id):
         conn.close()
         return redirect(url_for('admin_dashboard'))
 
+    # Delete Cloudinary assets
     for field in ('profile_image', 'cv_filename', 'intro_video'):
-        fname = user.get(field)
-        if fname:
-            fpath = os.path.join(UPLOAD_FOLDER, fname)
-            if os.path.exists(fpath):
-                os.remove(fpath)
+        cloudinary_delete_by_url(user.get(field))
 
     c.execute('SELECT media_filename FROM posts WHERE user_id=%s', (user_id,))
     posts = c.fetchall()
     for p in posts:
-        if p['media_filename']:
-            fpath = os.path.join(UPLOAD_FOLDER, p['media_filename'])
-            if os.path.exists(fpath):
-                os.remove(fpath)
+        cloudinary_delete_by_url(p.get('media_filename'))
 
     c.execute('DELETE FROM applications WHERE journalist_id=%s', (user_id,))
     c.execute('DELETE FROM posts WHERE user_id=%s', (user_id,))
@@ -839,10 +887,8 @@ def admin_delete_channel(channel_id):
         conn.close()
         return redirect(url_for('admin_dashboard'))
 
-    if channel.get('profile_image'):
-        fpath = os.path.join(UPLOAD_FOLDER, channel['profile_image'])
-        if os.path.exists(fpath):
-            os.remove(fpath)
+    cloudinary_delete_by_url(channel.get('profile_image'))
+    cloudinary_delete_by_url(channel.get('cover_image'))
 
     c.execute('SELECT id FROM jobs WHERE channel_id=%s', (channel_id,))
     jobs = c.fetchall()
@@ -875,6 +921,8 @@ def admin_logout():
     return redirect(url_for('admin_login'))
 
 
+# ── Background-replacement routes ─────────────────────────────────────────────
+
 @app.route('/profile/<int:user_id>/process-intro-bg', methods=['POST'])
 def process_intro_bg(user_id):
     if 'user_id' not in session or session['user_id'] != user_id:
@@ -892,22 +940,32 @@ def confirm_intro_bg(user_id):
         return jsonify({'error': 'اسم الملف مفقود'}), 400
 
     safe = secure_filename(filename)
-    if not os.path.exists(os.path.join(UPLOAD_FOLDER, safe)):
+    local_path = os.path.join(UPLOAD_FOLDER, safe)
+    if not os.path.exists(local_path):
         return jsonify({'error': 'الملف المعالج غير موجود'}), 404
+
+    # Upload processed video to Cloudinary
+    url = cloudinary_upload_path(local_path, resource_type='video')
+    if not url:
+        return jsonify({'error': 'فشل رفع الفيديو إلى Cloudinary'}), 500
+
+    # Clean up local temp file
+    try:
+        os.remove(local_path)
+    except Exception:
+        pass
 
     conn = get_db()
     c = conn.cursor()
     c.execute('SELECT intro_video FROM users WHERE id=%s', (user_id,))
     old = c.fetchone()
     if old and old['intro_video']:
-        old_path = os.path.join(UPLOAD_FOLDER, old['intro_video'])
-        if os.path.exists(old_path):
-            try: os.remove(old_path)
-            except Exception: pass
-    c.execute('UPDATE users SET intro_video=%s WHERE id=%s', (safe, user_id))
+        cloudinary_delete_by_url(old['intro_video'])
+
+    c.execute('UPDATE users SET intro_video=%s WHERE id=%s', (url, user_id))
     conn.commit()
     conn.close()
-    return jsonify({'ok': True, 'filename': safe})
+    return jsonify({'ok': True, 'url': url})
 
 
 @app.route('/api/process-bg', methods=['POST'])
@@ -1108,6 +1166,10 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
             if os.path.exists(p):
                 try: os.remove(p)
                 except Exception: pass
+        # Clean up fg temp file
+        if os.path.exists(fg_path):
+            try: os.remove(fg_path)
+            except Exception: pass
 
 
 if __name__ == '__main__':
