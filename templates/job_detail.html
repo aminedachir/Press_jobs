@@ -41,7 +41,7 @@ h3.section-h { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; padding-b
                     <div class="job-title-meta">
                         <span><i class="fas fa-tv"></i> {{ job.channel_name }}</span>
                         {% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}
-                        <span><i class="fas fa-calendar"></i> {{ job.created_at[:10] }}</span>
+                        <span><i class="fas fa-calendar"></i> {{ job.created_at.strftime('%Y-%m-%d') }}</span>
                     </div>
                     <div style="margin-top:0.7rem;display:flex;gap:0.5rem;flex-wrap:wrap">
                         <span class="badge badge-blue">{{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}</span>

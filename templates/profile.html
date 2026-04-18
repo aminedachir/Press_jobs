@@ -429,7 +429,7 @@
                 {% endif %}
                 <div class="sidebar-info-item">
                     <span class="sii-label"><i class="fas fa-calendar-alt"></i> عضو منذ</span>
-                    <span class="sii-val">{{ user.created_at[:10] }}</span>
+                    <span class="sii-val">{{ user.created_at.strftime('%Y-%m-%d') }}</span>
                 </div>
             </div>
 
@@ -543,7 +543,7 @@
                     <div class="post-card">
                         <div class="post-card-header">
                             <span class="post-card-title">{{ post.title or 'منشور' }}</span>
-                            <span class="post-card-date"><i class="fas fa-clock"></i> {{ post.created_at[:10] }}</span>
+                            <span class="post-card-date"><i class="fas fa-clock"></i> {{ post.created_at.strftime('%Y-%m-%d') }}</span>
                         </div>
                         {% if post.description %}<p class="post-card-desc">{{ post.description }}</p>{% endif %}
                     </div>
@@ -1007,7 +1007,7 @@
                     <div class="post-card">
                         <div class="post-card-header">
                             <span class="post-card-title">{{ post.title or 'منشور' }}</span>
-                            <span class="post-card-date"><i class="fas fa-clock"></i> {{ post.created_at[:10] }}</span>
+                            <span class="post-card-date"><i class="fas fa-clock"></i> {{ post.created_at.strftime('%Y-%m-%d') }}</span>
                         </div>
                         {% if post.description %}<p class="post-card-desc">{{ post.description }}</p>{% endif %}
                     </div>
@@ -1174,7 +1174,7 @@
                     </div>
                     <div>
                         <div style="font-weight:700;font-size:0.9rem">{{ job.title }}</div>
-                        <div style="font-size:0.78rem;color:var(--text-muted)">{{ job.created_at[:10] }}</div>
+                        <div style="font-size:0.78rem;color:var(--text-muted)">{{ job.created_at.strftime('%Y-%m-%d') }}</div>
                     </div>
                     <span class="badge badge-blue" style="margin-right:auto">
                         {{ {'journalist':'صحفي','photographer':'مصور','content':'صانع محتوى','editor':'مونتير','presenter':'مذيع','reporter':'مراسل'}.get(job.category, job.category) }}

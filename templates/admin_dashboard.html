@@ -622,7 +622,7 @@
                     </td>
                     <td><span class="badge badge-blue">{{ job.channel_name }}</span></td>
                     <td><span class="badge badge-gray">{{ job.category }}</span></td>
-                    <td style="color:var(--text-muted);font-size:0.8rem">{{ job.created_at[:10] }}</td>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ job.created_at.strftime('%Y-%m-%d') }}</td>
                     <td>
                         <button class="btn-delete"
                             onclick="confirmDelete('/admin/delete/job/{{ job.id }}','حذف وظيفة','هل تريد حذف وظيفة «{{ job.title }}»؟')">
@@ -676,7 +676,7 @@
                         <div class="user-cell">
                             <div class="user-avatar">
                                 {% if j.profile_image %}
-                                <img src="/static/uploads/{{ j.profile_image }}" alt="">
+                                <img src="{{ j.profile_image }}" alt="">
                                 {% else %}<i class="fas fa-user"></i>{% endif %}
                             </div>
                             <div>
@@ -697,7 +697,7 @@
                             {{ cnt }} طلب
                         </span>
                     </td>
-                    <td style="color:var(--text-muted);font-size:0.8rem">{{ j.created_at[:10] }}</td>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ j.created_at.strftime('%Y-%m-%d') }}</td>
                     <td>
                         <div style="display:flex;gap:0.4rem">
                             <a href="/profile/{{ j.id }}" target="_blank" class="btn-view">
@@ -758,7 +758,7 @@
                         <div class="user-cell">
                             <div class="user-avatar">
                                 {% if ch.profile_image %}
-                                <img src="/static/uploads/{{ ch.profile_image }}" alt="">
+                                <img src="{{ ch.profile_image }}" alt="">
                                 {% else %}<i class="fas fa-tv"></i>{% endif %}
                             </div>
                             <div>
@@ -774,7 +774,7 @@
                             {{ jcnt }} وظيفة
                         </span>
                     </td>
-                    <td style="color:var(--text-muted);font-size:0.8rem">{{ ch.created_at[:10] }}</td>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ ch.created_at.strftime('%Y-%m-%d') }}</td>
                     <td>
                         <div style="display:flex;gap:0.4rem">
                             <a href="/profile/{{ ch.id }}" target="_blank" class="btn-view">
@@ -845,7 +845,7 @@
                         <span class="badge badge-green">{{ job.job_type }}</span>
                         {% else %}<span style="color:var(--text-muted)">—</span>{% endif %}
                     </td>
-                    <td style="color:var(--text-muted);font-size:0.8rem">{{ job.created_at[:10] }}</td>
+                    <td style="color:var(--text-muted);font-size:0.8rem">{{ job.created_at.strftime('%Y-%m-%d') }}</td>
                     <td>
                         <button class="btn-delete"
                             onclick="confirmDelete('/admin/delete/job/{{ job.id }}','حذف وظيفة','هل تريد حذف وظيفة «{{ job.title }}»؟')">
