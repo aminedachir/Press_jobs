@@ -208,7 +208,7 @@
         <form method="POST" action="/channel/{{ channel.id }}/upload-picture" enctype="multipart/form-data" id="logoForm">
           <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:1rem">صورة مربعة 400×400 بكسل على الأقل.</p>
           <label class="logo-zone">
-            <div class="logo-thumb" id="logoThumb">{% if channel.profile_image %}<img src="/uploads/{{ channel.profile_image }}" id="logoImg">{% else %}<i class="fas fa-tv"></i>{% endif %}</div>
+            <div class="logo-thumb" id="logoThumb">{% if channel.profile_image %}<img src="{{ channel.profile_image }}" id="logoImg">{% else %}<i class="fas fa-tv"></i>{% endif %}</div>
             <div class="logo-txt"><h4>{% if channel.profile_image %}تغيير الشعار{% else %}رفع الشعار{% endif %}</h4><p>JPG، PNG، WEBP</p><div class="logo-chosen" id="logoChosen"></div></div>
             <input type="file" name="profile_image" id="logoInput" accept="image/*">
           </label>
@@ -219,7 +219,7 @@
           <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:1rem">صورة عريضة للغلاف — يُنصح بأبعاد 1200×300 بكسل.</p>
           {% if channel.cover_image %}
           <div style="border-radius:10px;overflow:hidden;margin-bottom:1rem">
-            <img src="/uploads/{{ channel.cover_image }}" style="width:100%;height:110px;object-fit:cover" id="coverPreviewImg">
+            <img src="{{ channel.cover_image }}" style="width:100%;height:110px;object-fit:cover" id="coverPreviewImg">
           </div>
           {% else %}
           <div style="border-radius:10px;background:rgba(255,255,255,0.04);border:1px dashed var(--border);height:90px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;color:var(--text-muted);font-size:0.85rem">
@@ -282,7 +282,7 @@
 
 <div class="ch-hero">
   {% if channel.cover_image %}
-  <img src="/uploads/{{ channel.cover_image }}" class="ch-hero-cover" alt="غلاف {{ channel.name }}">
+  <img src="{{ channel.cover_image }}" class="ch-hero-cover" alt="غلاف {{ channel.name }}">
   {% endif %}
   <div class="ch-hero-bg"></div>
   <div class="ch-hero-lines"></div>
@@ -291,7 +291,7 @@
   {% endif %}
   <div class="ch-hero-inner">
     <div class="ch-logo{% if is_owner %} editable{% endif %}"{% if is_owner %} onclick="openM('editModal','logo')"{% endif %}>
-      {% if channel.profile_image %}<img src="/uploads/{{ channel.profile_image }}" alt="{{ channel.name }}" id="heroLogo">{% else %}<i class="fas fa-tv default-icon"></i>{% endif %}
+      {% if channel.profile_image %}<img src="{{ channel.profile_image }}" alt="{{ channel.name }}" id="heroLogo">{% else %}<i class="fas fa-tv default-icon"></i>{% endif %}
       {% if is_owner %}<div class="ch-logo-overlay"><i class="fas fa-camera"></i><span>تغيير الشعار</span></div>{% endif %}
     </div>
     <div class="ch-hero-text">
@@ -299,7 +299,7 @@
       <div class="ch-hero-meta">
         <span><i class="fas fa-tv"></i> قناة إعلامية</span>
         {% if channel.location %}<span><i class="fas fa-map-marker-alt"></i> {{ channel.location }}</span>{% endif %}
-        <span><i class="fas fa-calendar"></i> منذ {{ channel.created_at[:4] }}</span>
+        <span><i class="fas fa-calendar"></i> منذ {{ channel.created_at.strftime('%Y') }}</span>
         <span><i class="fas fa-briefcase"></i> {{ jobs|length }} وظيفة</span>
       </div>
     </div>
@@ -339,7 +339,7 @@
                   <span class="badge badge-blue" style="font-size:0.7rem">{{ cmap.get(job.category,job.category) }}</span>
                   {% if job.job_type %}<span class="badge badge-orange" style="font-size:0.7rem">{{ job.job_type }}</span>{% endif %}
                   {% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}
-                  <span><i class="fas fa-calendar"></i> {{ job.created_at[:10] }}</span>
+                  <span><i class="fas fa-calendar"></i> {{ job.created_at.strftime('%Y-%m-%d') }}</span>
                 </div>
               </div>
               <div class="job-row-acts">
@@ -366,10 +366,10 @@
           <div class="app-card" data-status="{{ app.status }}">
             <div class="app-top">
               <div class="app-person">
-                <div class="app-av">{% if app.applicant_image %}<img src="/uploads/{{ app.applicant_image }}">{% else %}<i class="fas fa-user"></i>{% endif %}</div>
+                <div class="app-av">{% if app.applicant_image %}<img src="{{ app.applicant_image }}">{% else %}<i class="fas fa-user"></i>{% endif %}</div>
                 <div>
                   <div class="app-nm">{{ app.applicant_name }}</div>
-                  <div class="app-sb"><i class="fas fa-briefcase"></i> {{ app.job_title }}{% if app.applicant_location %} · <i class="fas fa-map-marker-alt"></i> {{ app.applicant_location }}{% endif %} · <i class="fas fa-calendar"></i> {{ app.created_at[:10] }}</div>
+                  <div class="app-sb"><i class="fas fa-briefcase"></i> {{ app.job_title }}{% if app.applicant_location %} · <i class="fas fa-map-marker-alt"></i> {{ app.applicant_location }}{% endif %} · <i class="fas fa-calendar"></i> {{ app.created_at.strftime('%Y-%m-%d') }}</div>
                 </div>
               </div>
               <span class="badge {% if app.status=='accepted' %}badge-green{% elif app.status=='rejected' %}badge-red{% else %}badge-orange{% endif %}">{{ {'pending':'قيد المراجعة','accepted':'مقبول','rejected':'مرفوض'}.get(app.status,app.status) }}</span>
@@ -386,7 +386,7 @@
               {% if app.status != 'accepted' %}<a href="/update-application/{{ app.id }}/accepted" class="abtn abtn-ok"><i class="fas fa-check"></i> قبول</a>{% endif %}
               {% if app.status != 'rejected' %}<a href="/update-application/{{ app.id }}/rejected" class="abtn abtn-no"><i class="fas fa-times"></i> رفض</a>{% endif %}
               <a href="/profile/{{ app.journalist_id }}" class="abtn abtn-pr" target="_blank"><i class="fas fa-user"></i> الملف</a>
-              {% if app.cv_filename %}<a href="/uploads/{{ app.cv_filename }}" class="abtn abtn-pr" download><i class="fas fa-file-pdf"></i> CV</a>{% endif %}
+              {% if app.cv_filename %}<a href="{{ app.cv_filename }}" class="abtn abtn-pr" download><i class="fas fa-file-pdf"></i> CV</a>{% endif %}
             </div>
           </div>
           {% endfor %}
@@ -413,7 +413,7 @@
         {% for job in jobs %}
         <a href="/job/{{ job.id }}" class="job-mini">
           <div class="jmico"><i class="fas fa-{{ imap.get(job.category,'briefcase') }}"></i></div>
-          <div class="jmbody"><h4>{{ job.title }}</h4><div class="jmmeta">{% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}{% if job.salary %}<span><i class="fas fa-dollar-sign"></i> {{ job.salary }}</span>{% endif %}<span><i class="fas fa-clock"></i> {{ job.created_at[:10] }}</span></div></div>
+          <div class="jmbody"><h4>{{ job.title }}</h4><div class="jmmeta">{% if job.location %}<span><i class="fas fa-map-marker-alt"></i> {{ job.location }}</span>{% endif %}{% if job.salary %}<span><i class="fas fa-dollar-sign"></i> {{ job.salary }}</span>{% endif %}<span><i class="fas fa-clock"></i> {{ job.created_at.strftime('%Y-%m-%d') }}</span></div></div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;flex-shrink:0"><span class="badge badge-blue">{{ cmap.get(job.category,job.category) }}</span>{% if job.job_type %}<span class="badge badge-orange">{{ job.job_type }}</span>{% endif %}</div>
         </a>
         {% endfor %}
@@ -449,7 +449,7 @@
     <div class="ch-card">
       <div class="ch-card-head"><i class="fas fa-building"></i> معلومات القناة</div>
       {% if channel.location %}<div class="sb-row"><span class="lbl"><i class="fas fa-map-marker-alt"></i> الموقع</span><span class="val">{{ channel.location }}</span></div>{% endif %}
-      <div class="sb-row"><span class="lbl"><i class="fas fa-calendar-plus"></i> الانضمام</span><span class="val">{{ channel.created_at[:7] }}</span></div>
+      <div class="sb-row"><span class="lbl"><i class="fas fa-calendar-plus"></i> الانضمام</span><span class="val">{{ channel.created_at.strftime('%Y-%m') }}</span></div>
       <div class="sb-row"><span class="lbl"><i class="fas fa-briefcase"></i> الوظائف</span><span class="val">{{ jobs|length }}</span></div>
       <div class="sb-row"><span class="lbl"><i class="fas fa-inbox"></i> الطلبات</span><span class="val">{{ total_applications }}</span></div>
     </div>
