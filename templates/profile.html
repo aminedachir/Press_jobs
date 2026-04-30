@@ -832,7 +832,11 @@
                         <div class="file-exists-row" id="intro-exists-row">
                             <i class="fas fa-check-circle" style="color:#4caf50"></i>
                             <span>تم رفع فيديو التقديم</span>
+                            {% if user.intro_video.startswith('http') %}
+                            <a href="{{ user.intro_video }}" target="_blank" class="file-view-btn">
+                            {% else %}
                             <a href="{{ url_for('static', filename='uploads/' + user.intro_video) }}" target="_blank" class="file-view-btn">
+                            {% endif %}
                                 <i class="fas fa-play"></i> مشاهدة
                             </a>
                         </div>
@@ -1118,9 +1122,14 @@
                     {% if user.intro_video %}
                     <div class="pub-video-wrap">
                         <div class="section-title-sm" style="margin-bottom:0.8rem;"><i class="fas fa-video"></i> فيديو تقديم الأخبار</div>
+                        {% if user.intro_video.startswith('http') %}
+                            {% set video_src = user.intro_video.replace('/upload/', '/upload/f_mp4/') %}
+                        {% else %}
+                            {% set video_src = url_for('static', filename='uploads/' + user.intro_video) %}
+                        {% endif %}
                         <video controls preload="metadata"
                                style="width:100%;border-radius:12px;max-height:320px;background:#000;display:block;">
-                            <source src="{{ url_for('static', filename='uploads/' + user.intro_video) }}" type="video/mp4">
+                            <source src="{{ video_src }}" type="video/mp4">
                             متصفحك لا يدعم الفيديو.
                         </video>
                     </div>
@@ -1442,7 +1451,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             clearInterval(pollTimer);
                             setProgress(100, 'اكتملت المعالجة ✓');
                             const rv = document.getElementById(cfg.resultVideoId);
-                            if (rv) rv.src = '/uploads/' + job.result;
+                            if (rv) {
+                                // job.result is now a full Cloudinary URL
+                                rv.src = job.result;
+                                rv.load();
+                            }
                             document.getElementById(cfg.resultWrapId).style.display = 'block';
                             if (processBtn) {
                                 processBtn.disabled = false;

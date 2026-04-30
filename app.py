@@ -1146,9 +1146,24 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
                 raise RuntimeError(f"ffmpeg failed: {err_msg}")
 
         with _bg_jobs_lock:
+            _bg_jobs[task_id]['progress'] = 95
+
+        # Upload finished video to Cloudinary
+        cloudinary_url = cloudinary_upload_path(output_path, resource_type='video', folder='pressjobs/bg_results')
+
+        # Clean up local output file
+        try:
+            os.remove(output_path)
+        except Exception:
+            pass
+
+        if not cloudinary_url:
+            raise RuntimeError("فشل رفع الفيديو المعالج إلى Cloudinary")
+
+        with _bg_jobs_lock:
             _bg_jobs[task_id]['status']   = 'done'
             _bg_jobs[task_id]['progress'] = 100
-            _bg_jobs[task_id]['result']   = os.path.basename(output_path)
+            _bg_jobs[task_id]['result']   = cloudinary_url  # full Cloudinary URL
 
     except Exception as e:
         for p in [output_path, output_path.replace('.mp4', '_raw.mp4')]:
