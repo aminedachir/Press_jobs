@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -12,11 +14,12 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'pressjobs_secret_2024')
 
-_DATA_DIR = os.environ.get('DATA_DIR', '.')
-UPLOAD_FOLDER = os.path.join(_DATA_DIR, 'uploads')
+DATA_DIR = os.environ.get('DATA_DIR', os.path.dirname(__file__))
+UPLOAD_FOLDER = os.path.join(DATA_DIR, 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
 
@@ -194,7 +197,7 @@ from flask import send_from_directory
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    data_uploads = os.path.join(_DATA_DIR, 'uploads')
+    data_uploads = os.path.join(DATA_DIR, 'uploads')
     if os.path.exists(os.path.join(data_uploads, filename)):
         return send_from_directory(data_uploads, filename)
     return send_from_directory(os.path.join('static', 'uploads'), filename)
@@ -939,17 +942,33 @@ def confirm_intro_bg(user_id):
     if not filename:
         return jsonify({'error': 'اسم الملف مفقود'}), 400
 
+    # الحالة 1: المعالجة رفعت الفيديو مباشرة إلى Cloudinary (Render/Production)
+    # في هذه الحالة يكون filename هو رابط Cloudinary كامل
+    if filename.startswith('http') and 'cloudinary.com' in filename:
+        url = filename
+        conn = get_db()
+        c = conn.cursor()
+        c.execute('SELECT intro_video FROM users WHERE id=%s', (user_id,))
+        old = c.fetchone()
+        if old and old['intro_video'] and old['intro_video'] != url:
+            cloudinary_delete_by_url(old['intro_video'])
+        c.execute('UPDATE users SET intro_video=%s WHERE id=%s', (url, user_id))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True, 'url': url})
+
+    # الحالة 2: الملف محلي (بيئة التطوير)
     safe = secure_filename(filename)
     local_path = os.path.join(UPLOAD_FOLDER, safe)
     if not os.path.exists(local_path):
-        return jsonify({'error': 'الملف المعالج غير موجود'}), 404
+        return jsonify({'error': 'الملف المعالج غير موجود على الخادم'}), 404
 
-    # Upload processed video to Cloudinary
+    # رفع الملف المحلي إلى Cloudinary
     url = cloudinary_upload_path(local_path, resource_type='video')
     if not url:
         return jsonify({'error': 'فشل رفع الفيديو إلى Cloudinary'}), 500
 
-    # Clean up local temp file
+    # حذف الملف المؤقت المحلي
     try:
         os.remove(local_path)
     except Exception:
@@ -1044,7 +1063,7 @@ def _run_bg_replacement(task_id, fg_path, studio_path, output_path):
         from mediapipe.tasks.python import vision
         from mediapipe.tasks.python.core import base_options as bo
 
-        model_path = os.path.join(_DATA_DIR, 'selfie_segmenter.tflite')
+        model_path = os.path.join(DATA_DIR, 'selfie_segmenter.tflite')
         if not os.path.exists(model_path):
             urllib.request.urlretrieve(
                 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',

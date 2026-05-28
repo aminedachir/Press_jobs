@@ -1122,17 +1122,20 @@
                     {% if user.intro_video %}
                     <div class="pub-video-wrap">
                         <div class="section-title-sm" style="margin-bottom:0.8rem;"><i class="fas fa-video"></i> فيديو تقديم الأخبار</div>
-                        {% if user.intro_video.startswith('http') %}
-                            {% set video_src = user.intro_video.replace('/upload/', '/upload/f_mp4/') %}
-                        {% else %}
-                            {% set video_src = url_for('static', filename='uploads/' + user.intro_video) %}
-                        {% endif %}
-                        <video controls preload="metadata"
-                               style="width:100%;border-radius:12px;max-height:320px;background:#000;display:block;">
-                            <source src="{{ video_src }}" type="video/mp4">
-                            متصفحك لا يدعم الفيديو.
-                        </video>
-                    </div>
+                            {% if user.intro_video %}
+                                {% if user.intro_video.startswith('http') %}
+                                    {% set video_src = user.intro_video %}
+                                {% else %}
+                                    {% set video_src = url_for('static', filename='uploads/' + user.intro_video) %}
+                                {% endif %}
+                                <video controls preload="metadata"
+                                    style="width:100%;border-radius:12px;max-height:320px;background:#000;display:block;">
+                                    <source src="{{ video_src }}" type="video/mp4">
+                                    <source src="{{ video_src }}">
+                                    متصفحك لا يدعم الفيديو.
+                                </video>
+                            {% endif %} 
+                        </div>
                     {% endif %}
                 </div>
             </div>
@@ -1554,21 +1557,54 @@ document.addEventListener('DOMContentLoaded', function () {
         resultWrapId:      'intro-bg-result-wrap',
         resultVideoId:     'intro-bg-result-video',
         processUrl:        '/profile/{{ user.id }}/process-intro-bg',
+        
         onDone: (filename) => {
             const field = document.getElementById('processed-intro-video-field');
             if (field) field.value = filename || '';
             if (filename) {
+                // إظهار مؤشر تحميل للمستخدم
+                const statusBar = document.getElementById('intro-bg-status-text');
+                if (statusBar) statusBar.textContent = 'جاري حفظ الفيديو...';
+
                 fetch('/profile/{{ user.id }}/confirm-intro-bg', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ filename })
-                }).then(r => r.json()).then(d => {
+                })
+                .then(r => r.json())
+                .then(d => {
                     if (d.ok) {
+                        // تحديث عنصر الفيديو في الصفحة مباشرة
+                        const videoEl = document.querySelector('.pub-video-wrap video');
+                        if (videoEl && d.url) {
+                            const source = videoEl.querySelector('source') || document.createElement('source');
+                            source.src = d.url;
+                            source.type = 'video/mp4';
+                            if (!videoEl.querySelector('source')) videoEl.appendChild(source);
+                            videoEl.load();
+                        }
+
+                        // رسالة نجاح واضحة
                         const row  = document.getElementById('intro-exists-row');
                         const hint = document.getElementById('intro-replace-hint');
-                        if (row)  { row.style.display = 'flex'; row.querySelector('span').textContent = 'تم حفظ الفيديو المعالج ✓'; }
+                        if (row) {
+                            row.style.display = 'flex';
+                            const span = row.querySelector('span');
+                            if (span) {
+                                span.textContent = '✅ تم حفظ الفيديو بنجاح، جاري تحديث الصفحة...';
+                                span.style.color = 'var(--orange)';
+                            }
+                        }
                         if (hint) hint.style.display = 'block';
+
+                        // إعادة تحميل الصفحة بعد 1.5 ثانية
+                        setTimeout(() => { window.location.reload(); }, 1500);
+                    } else {
+                        if (statusBar) statusBar.textContent = '⚠ ' + (d.error || 'فشل الحفظ');
                     }
+                })
+                .catch(() => {
+                    if (statusBar) statusBar.textContent = '⚠ فشل الاتصال بالخادم';
                 });
             }
         }
