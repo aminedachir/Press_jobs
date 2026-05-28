@@ -5,4 +5,5 @@ mediapipe==0.10.30
 numpy>=1.26.0,<2.0
 opencv-python-headless>=4.9.0
 psycopg2-binary
-cloudinarypython-dotenv==1.2.2
+cloudinary
+python-dotenv==1.2.2
