@@ -6,3 +6,14 @@ __pycache__/
 *.mp4
 *.webm
 *.jpeg
+*.jpg
+*.png
+*.pdf
+*.docx
+*.xlsx
+*.pptx
+*.zip
+*.tar.gz
+
+# Ignore the .env file containing sensitive information
+.env
