@@ -508,17 +508,22 @@
                     </h3>
                     <div class="media-grid">
                         {% for post in media_posts %}
+                        {% if post.media_filename.startswith('http') %}
+                            {% set media_url = post.media_filename %}
+                        {% else %}
+                            {% set media_url = url_for('static', filename='uploads/' + post.media_filename) %}
+                        {% endif %}
                         <div class="media-grid-item"
                              data-title="{{ post.title or '' }}"
                              data-desc="{{ post.description or '' }}"
-                             data-src="{{ url_for('static', filename='uploads/' + post.media_filename) }}"
+                             data-src="{{ media_url }}"
                              data-type="{{ post.media_type }}">
                             {% if post.media_type == 'image' %}
-                                <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" alt="{{ post.title or 'صورة' }}" loading="lazy" />
+                                <img src="{{ media_url }}" alt="{{ post.title or 'صورة' }}" loading="lazy" />
                                 <span class="media-type-badge"><i class="fas fa-image"></i></span>
                             {% elif post.media_type == 'video' %}
                                 <video muted preload="metadata" style="pointer-events:none;">
-                                    <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}#t=0.1" type="video/mp4">
+                                    <source src="{{ media_url }}#t=0.1" type="video/mp4">
                                 </video>
                                 <span class="media-type-badge"><i class="fas fa-play"></i> فيديو</span>
                             {% else %}
@@ -981,17 +986,22 @@
                     </h3>
                     <div class="media-grid">
                         {% for post in media_posts %}
+                        {% if post.media_filename.startswith('http') %}
+                            {% set media_url = post.media_filename %}
+                        {% else %}
+                            {% set media_url = url_for('static', filename='uploads/' + post.media_filename) %}
+                        {% endif %}
                         <div class="media-grid-item"
                              data-title="{{ post.title or '' }}"
                              data-desc="{{ post.description or '' }}"
-                             data-src="{{ url_for('static', filename='uploads/' + post.media_filename) }}"
+                             data-src="{{ media_url }}"
                              data-type="{{ post.media_type }}">
                             {% if post.media_type == 'image' %}
-                                <img src="{{ url_for('static', filename='uploads/' + post.media_filename) }}" alt="{{ post.title or 'صورة' }}" loading="lazy" />
+                                <img src="{{ media_url }}" alt="{{ post.title or 'صورة' }}" loading="lazy" />
                                 <span class="media-type-badge"><i class="fas fa-image"></i></span>
                             {% elif post.media_type == 'video' %}
                                 <video muted preload="metadata" style="pointer-events:none;">
-                                    <source src="{{ url_for('static', filename='uploads/' + post.media_filename) }}#t=0.1" type="video/mp4">
+                                    <source src="{{ media_url }}#t=0.1" type="video/mp4">
                                 </video>
                                 <span class="media-type-badge"><i class="fas fa-play"></i> فيديو</span>
                             {% endif %}
